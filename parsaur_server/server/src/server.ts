@@ -14,8 +14,14 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
-	InitializeResult
+	InitializeResult,
+	Hover,
+	HoverParams
 } from 'vscode-languageserver/node';
+
+import { getCompletionHandler } from './handlers/handleOnCompletion';
+import { getCompletionResolveHandler } from './handlers/handleOnCompletionResolve';
+
 
 import {
 	TextDocument
@@ -55,7 +61,8 @@ connection.onInitialize((params: InitializeParams) => {
 			// Tell the client that this server supports code completion.
 			completionProvider: {
 				resolveProvider: true
-			}
+			},
+			hoverProvider: true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -79,6 +86,12 @@ connection.onInitialized(() => {
 		});
 	}
 });
+
+connection.onHover((params: HoverParams): Promise<Hover> => {
+	return Promise.resolve({
+	  contents: ["Hover Demo"],
+	});
+  });
 
 // The example settings
 interface ExampleSettings {
@@ -187,137 +200,11 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 
 // This handler provides the initial list of the completion items.
-connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		return [
-			{
-				label: 'CONSTRUCTOR',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'CHARACTER',
-				kind: CompletionItemKind.Text,
-				data: 2
-			},
-			{
-				label: 'BASE',
-				kind: CompletionItemKind.Text,
-				data: 3
-			},
-			{
-				label: 'INT',
-				kind: CompletionItemKind.Text,
-				data: 4
-			},
-			{
-				label: 'ADD',
-				kind: CompletionItemKind.Text,
-				data: 5
-			},
-			{
-				label: 'CREATE',
-				kind: CompletionItemKind.Text,
-				data: 6
-			},
-			{
-				label: 'IMPORT',
-				kind: CompletionItemKind.Text,
-				data: 7
-			},
-			{
-				label: 'General',
-				kind: CompletionItemKind.Text,
-				data: 8
-			},
-			{
-				label: 'Decorator',
-				kind: CompletionItemKind.Text,
-				data: 9
-			},
-			{
-				label: 'DefaultItem',
-				kind: CompletionItemKind.Text,
-				data: 10
-			},
-			{
-				label: 'CastItem',
-				kind: CompletionItemKind.Text,
-				data: 11
-			},
-			{
-				label: 'ParallelDecorator',
-				kind: CompletionItemKind.Text,
-				data: 12
-			},
-			{
-				label: 'Generator',
-				kind: CompletionItemKind.Text,
-				data: 13
-			},
-			{
-				label: 'LIST',
-				kind: CompletionItemKind.Text,
-				data: 14
-			},
-
-		];
-	}
-);
+connection.onCompletion(getCompletionHandler());
 
 // This handler resolves additional information for the item selected in
 // the completion list.
-connection.onCompletionResolve(
-	(item: CompletionItem): CompletionItem => {
-		if (item.data === 1) {
-			item.detail = 'Constructor details';
-			item.documentation = 'docs';
-		} else if (item.data === 2) {
-			item.detail = 'Character details';
-			item.documentation = 'docs';
-		} else if (item.data === 3) {
-			item.detail = 'Base details';
-			item.documentation = 'docs';
-		} else if (item.data === 4) {
-			item.detail = 'INT details';
-			item.documentation = 'docs';
-		} else if (item.data === 5) {
-			item.detail = 'ADD details';
-			item.documentation = 'docs';
-		} else if (item.data === 6) {
-			item.detail = 'CREATE details';
-			item.documentation = 'docs';
-		} else if (item.data === 7) {
-			item.detail = 'IMPORT details';
-			item.documentation = 'docs';
-		} else if (item.data === 8) {
-			item.detail = 'General details';
-			item.documentation = 'docs';
-		} else if (item.data === 9) {
-			item.detail = 'Decorator details';
-			item.documentation = 'docs';
-		} else if (item.data === 10) {
-			item.detail = 'DefaultItem details';
-			item.documentation = 'docs';
-		} else if (item.data === 11) {
-			item.detail = 'CastItem details';
-			item.documentation = 'docs';
-		} else if (item.data === 12) {
-			item.detail = 'ParallelDecorator details';
-			item.documentation = 'docs';
-		} else if (item.data === 13) {
-			item.detail = 'Generator details';
-			item.documentation = 'docs';
-		} else if (item.data === 14) {
-			item.detail = 'LIST details';
-			item.documentation = 'docs';
-		}
-		return item;
-	}
-);
+connection.onCompletionResolve(getCompletionResolveHandler());
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
