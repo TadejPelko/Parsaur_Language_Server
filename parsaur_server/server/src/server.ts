@@ -21,6 +21,7 @@ import {
 
 import { getCompletionHandler } from './handlers/handleOnCompletion';
 import { getCompletionResolveHandler } from './handlers/handleOnCompletionResolve';
+import { getHoverHandler } from './handlers/handleOnHover';
 
 
 import {
@@ -62,7 +63,8 @@ connection.onInitialize((params: InitializeParams) => {
 			completionProvider: {
 				resolveProvider: true
 			},
-			hoverProvider: true
+			hoverProvider: true,
+			documentFormattingProvider: true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -87,11 +89,7 @@ connection.onInitialized(() => {
 	}
 });
 
-connection.onHover((params: HoverParams): Promise<Hover> => {
-	return Promise.resolve({
-	  contents: ["Hover Demo"],
-	});
-  });
+connection.onHover(getHoverHandler(documents));
 
 // The example settings
 interface ExampleSettings {
