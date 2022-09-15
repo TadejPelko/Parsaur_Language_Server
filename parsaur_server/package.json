@@ -1,20 +1,23 @@
 {
-	"name": "lsp-sample",
-	"description": "A language server example",
-	"author": "Microsoft Corporation",
-	"license": "MIT",
-	"version": "1.0.0",
+	"name": "parsaurlanguageserver",
+    "displayName": "Parsaur Lanugage Server",
+	"description": "Language server for Parsaur",
+	"author": "Timen Stepisnik Perdih",
+	"version": "0.0.2",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/Timen-Stepisnik-Perdih/Parsaur_Language_Server"
 	},
-	"publisher": "vscode-samples",
-	"categories": [],
+    "icon": "parsaur.ico",
+	"publisher": "parsaur",
+	"categories": [
+	"Programming Languages"
+	],
 	"keywords": [
-		"multi-root ready"
+		
 	],
 	"engines": {
-		"vscode": "^1.63.0"
+		"vscode": "^1.69.0"
 	},
 	"activationEvents": [
 		"onLanguage:prs",

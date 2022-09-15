@@ -76,7 +76,106 @@ export function getCompletionHandler(){
 				kind: CompletionItemKind.Text,
 				data: 14
 			},
-	
+			{
+				label: 'None',
+				kind: CompletionItemKind.Text,
+				data: 15
+			},
+			{
+				label: 'General',
+				kind: CompletionItemKind.Text,
+				data: 16
+			},
+			{
+				label: 'GeneralStrict',
+				kind: CompletionItemKind.Text,
+				data: 17
+			},
+			{
+				label: 'Reference',
+				kind: CompletionItemKind.Text,
+				data: 18
+			},
+			{
+				label: 'BreakItem',
+				kind: CompletionItemKind.Text,
+				data: 19
+			},
+			{
+				label: 'DecoratorItem',
+				kind: CompletionItemKind.Text,
+				data: 20
+			},
+			{
+				label: 'Optional',
+				kind: CompletionItemKind.Text,
+				data: 21
+			},
+			{
+				label: 'OptionalGroup',
+				kind: CompletionItemKind.Text,
+				data: 22
+			},
+			{
+				label: 'Input',
+				kind: CompletionItemKind.Text,
+				data: 23
+			},
+			{
+				label: 'Output',
+				kind: CompletionItemKind.Text,
+				data: 24
+			},
+			{
+				label: 'BreakPersist',
+				kind: CompletionItemKind.Text,
+				data: 25
+			},
+			{
+				label: 'StopItem',
+				kind: CompletionItemKind.Text,
+				data: 26
+			},
+			{
+				label: 'ListDelimiter',
+				kind: CompletionItemKind.Text,
+				data: 27
+			},
+			{
+				label: 'ListItem',
+				kind: CompletionItemKind.Text,
+				data: 28
+			},
+			{
+				label: 'ContainItem',
+				kind: CompletionItemKind.Text,
+				data: 29
+			},
+			{
+				label: 'Rule',
+				kind: CompletionItemKind.Text,
+				data: 30
+			},
+			{
+				label: 'Condition',
+				kind: CompletionItemKind.Text,
+				data: 31
+			},
+			{
+				label: 'Display',
+				kind: CompletionItemKind.Text,
+				data: 32
+			},
+			{
+				label: 'Remove',
+				kind: CompletionItemKind.Text,
+				data: 33
+			},
+			{
+				label: 'Inherit',
+				kind: CompletionItemKind.Text,
+				data: 34
+			},
 		];
 	}
 }
