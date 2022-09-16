@@ -98,11 +98,14 @@ export function getCompletionResolveHandler(){
 		} else if (item.data === 32) {
 			item.detail = 'Display details';
 			item.documentation = 'docs';
-		} else if (item.data === 34) {
+		} else if (item.data === 33) {
 			item.detail = 'Remove details';
 			item.documentation = 'docs';
-		} else if (item.data === 35) {
+		} else if (item.data === 34) {
 			item.detail = 'Inherit details';
+			item.documentation = 'docs';
+		}else if (item.data === 35) {
+			item.detail = 'AS details';
 			item.documentation = 'docs';
 		}
 		return item;

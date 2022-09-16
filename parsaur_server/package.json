@@ -1,6 +1,6 @@
 {
 	"name": "parsaurlanguageserver",
-    "displayName": "Parsaur Lanugage Server",
+    "displayName": "Parsaur Language Server",
 	"description": "Language server for Parsaur",
 	"author": "Timen Stepisnik Perdih",
 	"version": "0.0.3",

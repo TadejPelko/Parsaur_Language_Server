@@ -176,6 +176,11 @@ export function getCompletionHandler(){
 				kind: CompletionItemKind.Text,
 				data: 34
 			},
+			{
+				label: 'AS',
+				kind: CompletionItemKind.Text,
+				data: 35
+			},
 		];
 	}
 }
