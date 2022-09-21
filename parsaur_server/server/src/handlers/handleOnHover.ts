@@ -1,7 +1,6 @@
 import { Hover, HoverParams, TextDocument, TextDocuments } from 'vscode-languageserver';
 
 function getWordAt (str: string, pos: number) {
-
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;
@@ -17,7 +16,6 @@ function getWordAt (str: string, pos: number) {
 
     // Return the word, using the located bounds to extract it from the string.
     return str.slice(left, right + pos);
-
 }
 
 export function getHoverHandler(documents: TextDocuments<TextDocument>){
@@ -29,7 +27,6 @@ export function getHoverHandler(documents: TextDocuments<TextDocument>){
 		
 		const lines = text.split('\n');
 		const hoverLine = lines[line];
-		const hoverCharacter = hoverLine.substring(character, character+1);
 		const word = getWordAt(hoverLine, character);
 		return Promise.resolve({
 		  contents: [word],

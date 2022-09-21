@@ -1,27 +1,29 @@
 {
 	"name": "parsaurlanguageserver",
-    "displayName": "Parsaur Language Server",
+	"displayName": "Parsaur Language Server",
 	"description": "Language server for Parsaur",
 	"author": "Timen Stepisnik Perdih",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Timen-Stepisnik-Perdih/Parsaur_Language_Server"
 	},
-    "icon": "parsaur.ico",
+	"icon": "parsaur.ico",
 	"publisher": "parsaur",
 	"categories": [
-	"Programming Languages"
+		"Programming Languages"
 	],
-	"keywords": [
-		
-	],
+	"keywords": [],
 	"engines": {
 		"vscode": "^1.69.0"
 	},
 	"activationEvents": [
 		"onLanguage:prs",
-		"onLanguage:Parsaur"
+		"onLanguage:Parsaur",
+		"onView:nodeDependencies",
+		"onView:ftpExplorer",
+		"onView:jsonOutline",
+		"onView:fileExplorer"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -47,6 +49,32 @@
 					"description": "Traces the communication between VS Code and the language server."
 				}
 			}
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "structure-explorer",
+					"title": "Structure Explorer",
+					"icon": "media/dep.svg"
+				}
+			]
+		},
+		"views": {
+			"structure-explorer": [
+				{
+					"id": "nodeDependencies",
+					"name": "Structure Nodes",
+					"icon": "media/dep.svg",
+					"contextualTitle": "Structure Explorer"
+				}
+			],
+			"explorer": [
+				{
+					"id": "jsonOutline",
+					"name": "Json Outline",
+					"when": "jsonOutlineEnabled"
+				}
+			]
 		}
 	},
 	"scripts": {
@@ -65,5 +93,9 @@
 		"eslint": "^8.13.0",
 		"mocha": "^9.2.1",
 		"typescript": "^4.7.2"
+	},
+	"dependencies": {
+		"jsonc-parser": "^3.2.0",
+		"vscode": "^1.1.37"
 	}
 }

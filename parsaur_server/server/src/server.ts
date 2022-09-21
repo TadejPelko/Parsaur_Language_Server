@@ -197,7 +197,7 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 
 // This handler provides the initial list of the completion items.
-connection.onCompletion(getCompletionHandler());
+connection.onCompletion(getCompletionHandler(documents));
 
 // This handler resolves additional information for the item selected in
 // the completion list.

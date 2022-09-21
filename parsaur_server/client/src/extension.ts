@@ -4,7 +4,8 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import { workspace, ExtensionContext, window } from 'vscode';
+import { DepNodeProvider } from './nodeDependencies';
 
 import {
 	LanguageClient,
@@ -16,6 +17,8 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
+	const nodeDependenciesProvider = new DepNodeProvider();
+	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
@@ -47,8 +50,8 @@ export function activate(context: ExtensionContext) {
 
 	// Create the language client and start the client.
 	client = new LanguageClient(
-		'languageServerExample',
-		'Language Server Example',
+		'ParsaurLanguageServer',
+		'Parsaur Language Server',
 		serverOptions,
 		clientOptions
 	);

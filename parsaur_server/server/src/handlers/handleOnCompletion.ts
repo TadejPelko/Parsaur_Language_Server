@@ -1,10 +1,17 @@
-import { CompletionItem, CompletionItemKind, TextDocumentPositionParams } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
 
-export function getCompletionHandler(){
+export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 	return (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
+		const textUri = _textDocumentPosition.textDocument.uri;
+		const { line, character } = _textDocumentPosition.position;
+		const doc = documents.get(textUri)!;
+		const text = doc.getText();
+		const lines = text.split('\n');
+		const hoverLine = lines[line].substring(0,character);
+
 		return [
 			{
 				label: 'CONSTRUCTOR',

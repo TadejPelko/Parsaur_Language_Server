@@ -7,4 +7,4 @@ export function getDocumentFormattingHandler() {
 
 		return Promise.resolve(res);
 	}
-}
+};
