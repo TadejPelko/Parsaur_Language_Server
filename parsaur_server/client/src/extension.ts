@@ -5,7 +5,8 @@
 
 import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
-import { DepNodeProvider } from './nodeDependencies';
+import { Dependency, DepNodeProvider } from './nodeDependencies';
+import * as vscode from 'vscode';
 
 import {
 	LanguageClient,
@@ -19,6 +20,8 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
 	const nodeDependenciesProvider = new DepNodeProvider();
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
+	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => vscode.env.clipboard.writeText(node.full_name));
+	
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
