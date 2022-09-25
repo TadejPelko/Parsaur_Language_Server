@@ -6,6 +6,8 @@
 import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
+import { AutoFix } from './AutoFix';
+import { subscribeToDocumentChanges } from './diagnostics';
 import * as vscode from 'vscode';
 
 import {
@@ -17,10 +19,21 @@ import {
 
 let client: LanguageClient;
 
+
+
 export function activate(context: ExtensionContext) {
 	const nodeDependenciesProvider = new DepNodeProvider();
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => vscode.env.clipboard.writeText(node.full_name));
+
+	context.subscriptions.push(
+		vscode.languages.registerCodeActionsProvider('prs', new AutoFix(), {
+			providedCodeActionKinds: AutoFix.providedCodeActionKinds
+		})
+	);
+
+	const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
+	subscribeToDocumentChanges(context, emojiDiagnostics);
 	
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(

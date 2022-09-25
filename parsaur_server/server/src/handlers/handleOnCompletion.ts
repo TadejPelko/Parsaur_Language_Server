@@ -89,7 +89,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				data: 15
 			},
 			{
-				label: 'General',
+				label: 'AS',
 				kind: CompletionItemKind.Text,
 				data: 16
 			},
@@ -182,11 +182,6 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				label: 'Inherit',
 				kind: CompletionItemKind.Text,
 				data: 34
-			},
-			{
-				label: 'AS',
-				kind: CompletionItemKind.Text,
-				data: 35
 			},
 		];
 	}

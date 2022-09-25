@@ -1,6 +1,6 @@
 import { Hover, HoverParams, TextDocument, TextDocuments } from 'vscode-languageserver';
 
-function getWordAt (str: string, pos: number) {
+function getWordAt(str: string, pos: number) {
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;

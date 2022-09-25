@@ -48,7 +48,7 @@ export function getCompletionResolveHandler(){
 			item.detail = 'None details';
 			item.documentation = 'docs';
 		} else if (item.data === 16) {
-			item.detail = 'General details';
+			item.detail = 'AS details';
 			item.documentation = 'docs';
 		} else if (item.data === 17) {
 			item.detail = 'GeneralStrict details';
@@ -103,9 +103,6 @@ export function getCompletionResolveHandler(){
 			item.documentation = 'docs';
 		} else if (item.data === 34) {
 			item.detail = 'Inherit details';
-			item.documentation = 'docs';
-		}else if (item.data === 35) {
-			item.detail = 'AS details';
 			item.documentation = 'docs';
 		}
 		return item;
