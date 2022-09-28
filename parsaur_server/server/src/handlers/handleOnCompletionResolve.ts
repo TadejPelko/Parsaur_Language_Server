@@ -104,6 +104,9 @@ export function getCompletionResolveHandler(){
 		} else if (item.data === 34) {
 			item.detail = 'Inherit details';
 			item.documentation = 'docs';
+		} else if (item.data === 35) {
+			item.detail = 'TAG details';
+			item.documentation = 'docs';
 		}
 		return item;
 	}

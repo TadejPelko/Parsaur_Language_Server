@@ -182,7 +182,12 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				label: 'Inherit',
 				kind: CompletionItemKind.Text,
 				data: 34
-			},
+			},			
+			{
+				label: 'TAG',
+				kind: CompletionItemKind.Text,
+				data: 35
+			}
 		];
 	}
 }

@@ -131,6 +131,7 @@ export class AutoFix implements vscode.CodeActionProvider {
 		"Display",
 		"Remove",
 		"Inherit",
-		"AS"
+		"AS",
+		"TAG"
 	];
 }
