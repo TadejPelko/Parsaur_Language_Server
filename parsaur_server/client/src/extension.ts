@@ -32,8 +32,8 @@ export function activate(context: ExtensionContext) {
 		})
 	);
 
-	const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
-	subscribeToDocumentChanges(context, emojiDiagnostics);
+	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
+	// subscribeToDocumentChanges(context, emojiDiagnostics);
 	
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(

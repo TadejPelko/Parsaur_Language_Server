@@ -1,18 +1,30 @@
 import * as vscode from 'vscode';
-import { EMOJI_MENTION } from './diagnostics';
 
-const COMMAND = 'parsaurlanguageserver.command';
-const levenshtein = (a: string, b: string): number => {
-    if (a.length == 0) return b.length
-    if (b.length == 0) return a.length
-
-    if (a[0] == b[0]) return levenshtein(a.substring(1), b.substring(1))
-
-    return 1 + Math.min(
-        levenshtein(a, b.substring(1)),
-        levenshtein(a.substring(1), b),
-        levenshtein(a.substring(1), b.substring(1))
-    )
+const stringDistance = (a: string, b: string, maxDistance: number): boolean => {
+	const aL = a.length;
+	const bL = b.length;
+	let distance = 0;
+	if (bL > aL){
+		if (bL - aL > maxDistance)
+			return false
+		for (var ix = 0; ix<bL; ix++){
+			if(a[ix] != b[ix])
+				distance++;
+			if(distance > maxDistance)
+				return false;
+		}
+		return distance + bL - aL <= maxDistance;
+	}else{
+		if (aL - bL > maxDistance)
+			return false
+		for (var ix = 0; ix<aL; ix++){
+			if(a[ix] != b[ix])
+				distance++;
+			if(distance > maxDistance)
+				return false;
+		}
+		return distance + aL - bL <= maxDistance;
+	}
 }
 
 export class AutoFix implements vscode.CodeActionProvider {
@@ -46,7 +58,7 @@ export class AutoFix implements vscode.CodeActionProvider {
 		}
 		let offsetLeft = start -range.start.character;
 		let offsetRight =  stop - range.start.character;
-		let suggestedFixesArray = [];
+		let suggestedFixesArray =[];
 		for (var fix of fixes){
 			suggestedFixesArray.push(this.createFix(document, range, fix, offsetLeft, offsetRight));
 		}
@@ -65,8 +77,13 @@ export class AutoFix implements vscode.CodeActionProvider {
 	private suggestFix(word: string): string[] {
 		let arrayOfFixes = [];
 		for(var potentialFix of this.listOfAutoFixes){
-			let distance = levenshtein(word, potentialFix)
-			if (distance > 0 && distance <= word.length / 3)
+			if (word == potentialFix)
+				continue;
+			if (word.toUpperCase() == potentialFix){
+				arrayOfFixes.push(potentialFix);
+				continue;
+			}
+			if (stringDistance(word, potentialFix, word.length/3))
 				arrayOfFixes.push(potentialFix);
 		}
 		return arrayOfFixes;
