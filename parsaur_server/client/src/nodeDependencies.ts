@@ -2,12 +2,40 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { ByteLengthQueuingStrategy } from 'stream/web';
 
+export class DependencyTree {
+	roots: Dependency[]
+
+	constructor(roots: Dependency[]){
+		this.roots = roots;
+	}
+}
+
 export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Dependency | undefined | void> = new vscode.EventEmitter<Dependency | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Dependency | undefined | void> = this._onDidChangeTreeData.event;
+	nodeTree: DependencyTree;
 
 	constructor() {
+		this.constructNodeTree();
+	}
+
+	private constructNodeTree(){
+		this.nodeTree = new DependencyTree([
+			new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, this.readItemFromEdgelist("GENERIC_LISTS")),
+		 	new Dependency("FILE_ELEMENT", "FILE_ELEMENT", "", vscode.TreeItemCollapsibleState.Collapsed, this.readItemFromEdgelist("FILE_ELEMENT"))
+		]);
+		for (var root of this.nodeTree.roots)
+			this.constructNodeTreeRec(root);
+	}
+
+	private constructNodeTreeRec(node: Dependency){
+		for (var child of node.children){
+			let grandChildren = this.readItemFromEdgelist(child.full_name);
+			child.children = grandChildren;
+			for (let grandChild of grandChildren)
+				this.constructNodeTreeRec(grandChild);
+		}
 	}
 
 	refresh(): void {
@@ -29,7 +57,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		return false;
 	}
 
-	readItemFromEdgelist(item: string): Thenable<Dependency[]>{
+	readItemFromEdgelist(item: string): Dependency[]{
 		let returnResult: Dependency[] = [];
 		const arr = edgelist.split('\t');
 		for(let line of arr) {
@@ -37,9 +65,24 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			if (splittedLine[0] === item){
 				let splittedName = splittedLine[1].split('.')
 				if (this.checkForChildren(splittedLine[1]))
-					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.Collapsed));
+					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.Collapsed, []));
 				else
-					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.None));
+					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.None, []));
+			}
+		}
+		return returnResult;
+	}
+	readItemFromEdgelistPromise(item: string): Thenable<Dependency[]>{
+		let returnResult: Dependency[] = [];
+		const arr = edgelist.split('\t');
+		for(let line of arr) {
+			let splittedLine = line.split(' ');
+			if (splittedLine[0] === item){
+				let splittedName = splittedLine[1].split('.')
+				if (this.checkForChildren(splittedLine[1]))
+					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.Collapsed, []));
+				else
+					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.None, []));
 			}
 		}
 		return Promise.resolve(returnResult);
@@ -47,13 +90,70 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 
 	getChildren(element?: Dependency): Thenable<Dependency[]> {
 		if (element){
-			return this.readItemFromEdgelist(element.full_name);
+			return this.readItemFromEdgelistPromise(element.full_name);
 		}else{
 			return Promise.resolve([
-						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed),
-						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", "", vscode.TreeItemCollapsibleState.Collapsed),
+						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", "", vscode.TreeItemCollapsibleState.Collapsed, []),
 					]);
 		}
+	}
+
+	async provideNodeSearch(){
+		let searchInput = vscode.window.showInputBox();
+		if (!searchInput)
+			return;
+
+		let pathArray = this.idDFS(await searchInput);
+		let strAray = "";
+		for (var obj of pathArray)
+			strAray += " " + obj.full_name
+		vscode.window.showInformationMessage(strAray);
+		
+		
+	}
+
+	private bottomReached: boolean;
+	private idDFS(target: string){
+		var depth = 1;
+		this.bottomReached = false;
+		while (!this.bottomReached){
+			this.bottomReached = true;
+			for (var root of this.nodeTree.roots){
+				var path = this.idDFSRec(root, target, 0, depth);
+				if (path)
+					return path
+				
+			}
+			depth += 1;
+		}
+	}
+
+	private idDFSRec(node: Dependency, target: string, currDepth: number, maxDepth: number): Dependency[] {
+		if (this.checkCondition(node, target))
+			return [node];
+		if (currDepth === maxDepth){
+			if (node.children.length > 0)
+				this.bottomReached = false;
+			return null;
+		}
+		// Recurse with all children
+		for (var child of node.children) {
+			var result = this.idDFSRec(child, target, currDepth + 1, maxDepth);
+			if (result != null) {
+				// We've found the goal node while going down that child
+				result.push(node)
+				return result;
+			}
+		}
+	
+		// We've gone through all children and not found the goal node
+		return null;
+	}
+
+	private checkCondition(node: Dependency, target:string): boolean{
+		let splittedName = node.full_name.split('.');
+		return splittedName.indexOf(target) > -1 || node.full_name === target;
 	}
 }
 
@@ -63,7 +163,8 @@ export class Dependency extends vscode.TreeItem {
 		public readonly label: string,
 		public readonly full_name: string,
 		private readonly type: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState
+		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+		public children: Dependency[]
 	) {
 		super(label, collapsibleState);
 

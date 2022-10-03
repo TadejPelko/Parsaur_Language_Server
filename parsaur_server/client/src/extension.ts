@@ -25,12 +25,14 @@ export function activate(context: ExtensionContext) {
 	const nodeDependenciesProvider = new DepNodeProvider();
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => vscode.env.clipboard.writeText(node.full_name));
+	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
 
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider('prs', new AutoFix(), {
 			providedCodeActionKinds: AutoFix.providedCodeActionKinds
 		})
 	);
+	
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
 	// subscribeToDocumentChanges(context, emojiDiagnostics);

@@ -80,6 +80,14 @@
 			{
 				"command": "nodeDependencies.copyEntry",
 				"title": "Copy"
+			},
+			{
+				"command": "nodeDependencies.refreshEntry",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
 			}
 		],
 		"menus": {
@@ -87,6 +95,13 @@
 				{
 					"command": "nodeDependencies.copyEntry",
 					"when": "view == nodeDependencies && viewItem == dependency"
+				}
+			],
+			"view/title": [
+				{
+					"command": "nodeDependencies.refreshEntry",
+					"when": "view == nodeDependencies",
+					"group": "navigation"
 				}
 			]
 		}
