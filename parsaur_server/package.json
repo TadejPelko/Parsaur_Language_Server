@@ -83,10 +83,10 @@
 			},
 			{
 				"command": "nodeDependencies.refreshEntry",
-				"title": "Refresh",
+				"title": "Search",
 				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
+					"light": "resources/light/icons8-search.svg",
+					"dark": "resources/dark/search.png"
 				}
 			}
 		],

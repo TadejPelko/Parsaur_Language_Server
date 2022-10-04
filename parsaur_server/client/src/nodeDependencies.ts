@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { ByteLengthQueuingStrategy } from 'stream/web';
 
 export class DependencyTree {
 	roots: Dependency[]
@@ -105,12 +103,13 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			return;
 
 		let pathArray = this.idDFS(await searchInput);
-		let strAray = "";
-		for (var obj of pathArray)
-			strAray += " " + obj.full_name
-		vscode.window.showInformationMessage(strAray);
-		
-		
+		if (pathArray){
+			//await vscode.commands.executeCommand('workbench.actions.treeView.nodeDependencies.collapseAll');
+			vscode.env.clipboard.writeText(pathArray[0].full_name);
+			vscode.window.showInformationMessage(`Copied ${pathArray[0].full_name} to clipboard.`);
+		}else{
+			vscode.window.showInformationMessage(`Could not find ${await searchInput}.`);
+		}
 	}
 
 	private bottomReached: boolean;
@@ -153,7 +152,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 
 	private checkCondition(node: Dependency, target:string): boolean{
 		let splittedName = node.full_name.split('.');
-		return splittedName.indexOf(target) > -1 || node.full_name === target;
+		return splittedName.indexOf(target) > -1 || node.full_name === target || splittedName.indexOf(target.toUpperCase()) > -1;
 	}
 }
 
@@ -163,7 +162,7 @@ export class Dependency extends vscode.TreeItem {
 		public readonly label: string,
 		public readonly full_name: string,
 		private readonly type: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+		public collapsibleState: vscode.TreeItemCollapsibleState,
 		public children: Dependency[]
 	) {
 		super(label, collapsibleState);
