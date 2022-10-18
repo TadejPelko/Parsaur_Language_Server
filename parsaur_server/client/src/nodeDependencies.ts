@@ -1,4 +1,8 @@
 import * as vscode from 'vscode';
+import { readFileSync, writeFileSync, promises as fsPromises } from 'fs';
+import { join } from 'path';
+import { ConsoleReporter } from '@vscode/test-electron';
+import { Console } from 'console';
 
 export class DependencyTree {
 	roots: Dependency[]
@@ -28,11 +32,13 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 
 	private constructNodeTreeRec(node: Dependency){
+		var nd_name = node.label
+		if (nd_name == "SQL")
+			nd_name = "AAA"
 		for (var child of node.children){
 			let grandChildren = this.readItemFromEdgelist(child.full_name);
 			child.children = grandChildren;
-			for (let grandChild of grandChildren)
-				this.constructNodeTreeRec(grandChild);
+			this.constructNodeTreeRec(child);
 		}
 	}
 
@@ -111,7 +117,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			vscode.window.showInformationMessage(`Could not find ${await searchInput}.`);
 		}
 	}
-
 	private bottomReached: boolean;
 	private idDFS(target: string){
 		var depth = 1;
@@ -122,13 +127,14 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 				var path = this.idDFSRec(root, target, 0, depth);
 				if (path)
 					return path
-				
 			}
 			depth += 1;
 		}
 	}
 
 	private idDFSRec(node: Dependency, target: string, currDepth: number, maxDepth: number): Dependency[] {
+		if (node.label == "SPECIAL_CHAR" || node.label == "CHARACTER")
+			console.log()
 		if (this.checkCondition(node, target))
 			return [node];
 		if (currDepth === maxDepth){
