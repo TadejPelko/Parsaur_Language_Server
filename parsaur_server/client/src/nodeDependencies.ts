@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import { environment } from './environments/environment';
 
+
+/**
+ * Contains funtions for hierarchical definitions search. 
+ */
 export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Dependency | undefined | void> = new vscode.EventEmitter<Dependency | undefined | void>();
@@ -8,10 +12,25 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	private edgelist = environment['hierarchy_json'];
 	private dependencyDictionary = {};
 
+
+  /**
+   * Constructor for Parsaur Definition Dependency Provider.
+   *
+   * @remarks
+   * Upon construction, a dictionary mapping definitions to their full dependency path is created.
+   *
+   * @returns DepNodeProvider class instance
+   */
 	constructor() {
 		this.constructDependencyDictionary();
 	}
 
+
+ /**
+   * Constructs a dictionary mapping definitions to their full dependency path.
+   * 
+   * @returns Dictionary mapping definitions to their full dependency path
+   */
 	private constructDependencyDictionary(){
 		const arr = this.edgelist.split('\t');
 		for(let line of arr) {
@@ -41,6 +60,13 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		return element;
 	}
 
+ /**
+   * Checks whether the definition has a child in the hierarchy
+   * 
+   * @param item - Definition name
+   * 
+   * @returns Boolean answer
+   */
 	private checkForChildren(item: string): boolean {
 		const arr = this.edgelist.split('\t');
 		for(let line of arr) {
@@ -52,6 +78,16 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		return false;
 	}
 
+ /**
+   * Finds children of a definition
+   * 
+   * @remarks
+   * The functions reads {@link edgelist}
+   * 
+   * @param item - Definition name
+   * 
+   * @returns Promise of the list of the given definitions children as {@link Dependency} list.
+   */
 	private readItemFromEdgelistPromise(item: string): Thenable<Dependency[]>{
 		let returnResult: Dependency[] = [];
 		const arr = this.edgelist.split('\t');
@@ -68,6 +104,16 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		return Promise.resolve(returnResult);
 	}
 
+ /**
+   * Finds children of a definition
+   * 
+   * @remarks
+   * If the parameter is not given then it returns the two "top level" definitions.
+   * 
+   * @param item - Definition {@link Dependency}
+   * 
+   * @returns Promise of the list of the given definitions children as {@link Dependency} list.
+   */
 	public getChildren(element?: Dependency): Thenable<Dependency[]> {
 		if (element){
 			return this.readItemFromEdgelistPromise(element.full_name);
@@ -79,6 +125,9 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		}
 	}
 
+ /**
+   * Provides an input box for the user. Maps the inputed definition name to its full path and writes it to clipboard.
+   */
 	public async provideNodeSearch(){
 		let searchInput = vscode.window.showInputBox();
 		if (!searchInput)
@@ -87,7 +136,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		let input_term = await searchInput;
 		let inputTermUpperCase = input_term.toUpperCase();
 		if (inputTermUpperCase in this.dependencyDictionary){
-			//await vscode.commands.executeCommand('workbench.actions.treeView.nodeDependencies.collapseAll');
 			vscode.env.clipboard.writeText(this.dependencyDictionary[inputTermUpperCase]);
 			vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[inputTermUpperCase]} to clipboard.`);
 		}else{
@@ -96,6 +144,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 }
 
+ /**
+   * Provides a class that holds a dependency.
+   * 
+   * @remarks
+   * Used for the tree structure in the Structure explorer menu
+   */
 export class Dependency extends vscode.TreeItem {
 
 	constructor(
