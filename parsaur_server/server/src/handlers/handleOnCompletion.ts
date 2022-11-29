@@ -1,16 +1,78 @@
 import { CompletionItem, CompletionItemKind, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
 
+// const regularExpressions = [
+// 	{
+// 		regex: new RegExp('*(CREATE\s+TAG)*'),
+// 		name: "CREATE TAG"
+// 	}
+// ];
+
+const openBrackets = ['(', '{'];
+const closedBrackets = [')', '}']
+
+function getOpenBrackets(documentString: string): boolean[]{
+	var bracketArray = [];
+	var stack = [];
+	var bracketIx = 0;
+	for (var char of documentString){
+		if (char in openBrackets){
+			bracketArray.push(true);
+			stack.push({
+				bracket: char,
+				index: bracketIx
+			});
+		}
+		if (char in closedBrackets){
+			bracketArray.push(false);
+			if (stack[stack.length - 1]['bracket'] === openBrackets[closedBrackets.indexOf(stack[stack.length - 1]['bracket'])]){
+				bracketArray[stack[stack.length - 1]['index']] = false;
+				stack.pop();
+			}
+		}
+		bracketIx++;
+	}
+
+	return bracketArray;
+}
+
+// function findRegularExpressions(document: string[]): string[]{
+// 	let contextArray = []; 
+// 	for (var regexp of regularExpressions){
+
+// 	}
+// }
+
 export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 	return (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
+	
 		const textUri = _textDocumentPosition.textDocument.uri;
 		const { line, character } = _textDocumentPosition.position;
 		const doc = documents.get(textUri)!;
 		const text = doc.getText();
 		const lines = text.split('\n');
+		var documentUpToCurrentCharacter = "";
 		const hoverLine = lines[line].substring(0,character);
+		for (var i = 0; i<line; i++){
+			documentUpToCurrentCharacter += lines[i];
+		}
+		documentUpToCurrentCharacter += hoverLine;
+		const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
+		const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
+		console.log(openBracketArray);
+		debugger;
+		var return_res = "";
+		for (var i = 0; i<openBracketArray.length; i++){
+			if (openBracketArray[i])
+				return_res+=bracketSplitDocument[i];
+		}
+		// return[{
+		// 	label: return_res,
+		// 	kind: CompletionItemKind.Text,
+		// 	data: "hahaha"}]
+
 
 		return [
 			{
