@@ -1,5 +1,14 @@
 import { Hover, HoverParams, TextDocument, TextDocuments } from 'vscode-languageserver';
 
+ /**
+   * Extracts the word of the character. 
+   * 
+   * @param str - string in which the word we want to extract is found
+   * @param position - position of the character within the string
+   * 
+   * @returns The word of the character 
+   */
+
 function getWordAt(str: string, pos: number) {
     // Perform type conversions.
     str = String(str);
@@ -17,6 +26,12 @@ function getWordAt(str: string, pos: number) {
     // Return the word, using the located bounds to extract it from the string.
     return str.slice(left, right + pos);
 }
+
+ /**
+   * Provides details upon hovering.
+   * 
+   * @returns Funtion that returns the on-hover tooltip. 
+   */
 
 export function getHoverHandler(documents: TextDocuments<TextDocument>){
 	return (params: HoverParams): Promise<Hover> => {
