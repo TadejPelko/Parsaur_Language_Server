@@ -1,11 +1,23 @@
 import { CompletionItem, CompletionItemKind, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
 
-// const regularExpressions = [
-// 	{
-// 		regex: new RegExp('*(CREATE\s+TAG)*'),
-// 		name: "CREATE TAG"
-// 	}
-// ];
+const regularExpressions = [
+	{
+		regex: /CREATE\s+TAG/g,
+		name: "CREATE TAG"
+	},
+	{
+		regex: /CREATE\s+BASE/g,
+		name: "CREATE BASE"
+	},
+	{
+		regex: /CREATE\s+LIST/g,
+		name: "CREATE LIST"
+	},
+	{
+		regex: /ADD\s+CONSTRUCTOR/g,
+		name: "ADD CONSTRUCTOR"
+	}
+];
 
 const openBrackets = ['(', '{'];
 const closedBrackets = [')', '}']
@@ -14,33 +26,40 @@ function getOpenBrackets(documentString: string): boolean[]{
 	var bracketArray = [];
 	var stack = [];
 	var bracketIx = 0;
-	for (var char of documentString){
-		if (char in openBrackets){
+	for (let i = 0; i < documentString.length; i++){
+		const char = documentString.charAt(i);
+		if (openBrackets.indexOf(char) !== -1){
 			bracketArray.push(true);
 			stack.push({
 				bracket: char,
 				index: bracketIx
 			});
+			bracketIx++;
 		}
-		if (char in closedBrackets){
+		if (closedBrackets.indexOf(char) !== -1){
+			bracketIx++;
 			bracketArray.push(false);
-			if (stack[stack.length - 1]['bracket'] === openBrackets[closedBrackets.indexOf(stack[stack.length - 1]['bracket'])]){
+			if (stack[stack.length - 1]['bracket'] === openBrackets[closedBrackets.indexOf(char)]){
 				bracketArray[stack[stack.length - 1]['index']] = false;
 				stack.pop();
 			}
 		}
-		bracketIx++;
 	}
 
 	return bracketArray;
 }
 
-// function findRegularExpressions(document: string[]): string[]{
-// 	let contextArray = []; 
-// 	for (var regexp of regularExpressions){
+function findKeyWords(documentPart: string): string[]{
+	let contextArray: string[] = []; 
+	for (var regexp of regularExpressions){
+		if (regexp.regex.test(documentPart)){
+			contextArray.push(regexp.name);
+			break
+		}
+	}
+	return contextArray;
+}
 
-// 	}
-// }
 
 export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 	return (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
@@ -61,17 +80,16 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		documentUpToCurrentCharacter += hoverLine;
 		const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
 		const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-		console.log(openBracketArray);
-		debugger;
 		var return_res = "";
 		for (var i = 0; i<openBracketArray.length; i++){
 			if (openBracketArray[i])
-				return_res+=bracketSplitDocument[i];
+				return_res+= " | " + findKeyWords(bracketSplitDocument[i]);
 		}
-		// return[{
-		// 	label: return_res,
-		// 	kind: CompletionItemKind.Text,
-		// 	data: "hahaha"}]
+		return[{
+			//label: "brackets: " + openBracketArray.length + " | " + openBracketArray.join(" "),
+			label: "brackets: " + return_res,
+			kind: CompletionItemKind.Text,
+			data: documentUpToCurrentCharacter}]
 
 
 		return [
