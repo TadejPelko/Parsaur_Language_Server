@@ -9,13 +9,13 @@ import { Definition, DefinitionParams, Location, TextDocument, TextDocuments } f
    * @returns The word of the character 
    */
 
-function getWordAt(str: string, pos: number) {
+function getSequenceAt(str: string, pos: number) {
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;
 
     // Search for the word's beginning and end.
-    var left = str.slice(0, pos + 1).search(/\w+$/),
+    var left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
         right = str.slice(pos).search(/\W/);
 
     // The last word in the string is a special case.
@@ -33,35 +33,42 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
 		const text = doc.getText();
 		const lines = text.split('\n');
 		const hoverLine = lines[params.position.line];
-        const word = getWordAt(hoverLine, params.position.character); // word for definition search
+        const sequence = getSequenceAt(hoverLine, params.position.character); // word for definition search
+        const sequenceSplit = sequence.split(".");
+        const term = sequenceSplit[sequenceSplit.length - 1];
 
         const allUris = documents.all();
-        
+
         let targetUri = "";
         let targetLine = -1;
         let targetCharacter = -1;
-        const searchTerm = "CREATE BASE " + word;
-
-
-        for (let uri of allUris){
-            const doc = documents.get(uri.uri)?.getText();
-            if (doc){
-                const documentLines = doc?.split('\n');
-                for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
-                    const ix = documentLines[lineIx].indexOf(searchTerm); 
-                    if (ix > -1){
-                        targetUri = uri.uri;
-                        targetLine = lineIx;
-                        targetCharacter = ix;
-                        break;
+        let searchTermLength = -1;
+        const possibleConstructors = ["CREATE BASE ", "CREATE GRID "]
+        for (let constructor of possibleConstructors){
+            const searchTerm = constructor + term;
+            searchTermLength = searchTerm.length;
+            for (let uri of allUris){
+                const doc = documents.get(uri.uri)?.getText();
+                if (doc){
+                    const documentLines = doc?.split('\n');
+                    for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
+                        const ix = documentLines[lineIx].indexOf(searchTerm); 
+                        if (ix > -1 && documentLines[lineIx][ix + searchTerm.length].match(/\W/)){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix
+                            targetUri = uri.uri;
+                            targetLine = lineIx;
+                            targetCharacter = ix;
+                            break;
+                        }
                     }
                 }
             }
+            if(targetLine > -1)
+                break;
         }
         if (targetUri != "")
             return Location.create(targetUri, {
                 start: { line: targetLine, character: targetCharacter },
-                end: { line: targetLine, character: targetCharacter + searchTerm.length }
+                end: { line: targetLine, character: targetCharacter + searchTermLength }
             });
     }
         
