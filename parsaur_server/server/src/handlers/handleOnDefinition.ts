@@ -1,4 +1,57 @@
 import { Definition, DefinitionParams, Location, TextDocument, TextDocuments } from "vscode-languageserver";
+const regularExpressions = [
+	{
+		regex: /CREATE\s+BASE/g,
+		name: "CREATE BASE "
+	},
+	{
+		regex: /CREATE\s+GRID/g,
+		name: "CREATE LIST "
+	}
+];
+
+const openBrackets = ['(', '{'];
+const closedBrackets = [')', '}']
+
+function getOpenBrackets(documentString: string): boolean[]{
+	var bracketArray = [];
+	var stack = [];
+	var bracketIx = 0;
+	for (let i = 0; i < documentString.length; i++){
+		const char = documentString.charAt(i);
+		if (openBrackets.indexOf(char) !== -1){
+			bracketArray.push(true);
+			stack.push({
+				bracket: char,
+				index: bracketIx
+			});
+			bracketIx++;
+		}
+		if (closedBrackets.indexOf(char) !== -1){
+			bracketIx++;
+			bracketArray.push(false);
+			if (stack[stack.length - 1]['bracket'] === openBrackets[closedBrackets.indexOf(char)]){
+				bracketArray[stack[stack.length - 1]['index']] = false;
+				stack.pop();
+			}
+		}
+	}
+
+	return bracketArray;
+}
+
+function findKeyWords(documentPart: string): string{
+	let context: string = ""; 
+	for (var regexp of regularExpressions){
+		if (regexp.regex.test(documentPart)){
+			let ix = documentPart.indexOf(regexp.name);
+            context = documentPart.substring(ix + regexp.name.length, documentPart.length-1);
+			break
+		}
+	}
+	return context;
+}
+
 
 /**
    * Extracts the word of the character. 
@@ -27,6 +80,17 @@ function getSequenceAt(str: string, pos: number) {
     return str.slice(left, right + pos);
 }
 
+function arraysEqual(a:any[], b:any[]) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+
+    for (var i = 0; i < a.length; ++i) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
 export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
     return (params: DefinitionParams) =>{
         const doc = documents.get(params.textDocument.uri)!;
@@ -35,7 +99,7 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
 		const hoverLine = lines[params.position.line];
         const sequence = getSequenceAt(hoverLine, params.position.character); // word for definition search
         const sequenceSplit = sequence.split(".");
-        const term = sequenceSplit[sequenceSplit.length - 1];
+        const term = sequenceSplit.pop();
 
         const allUris = documents.all();
 
@@ -54,13 +118,31 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
                     for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
                         const ix = documentLines[lineIx].indexOf(searchTerm); 
                         if (ix > -1 && documentLines[lineIx][ix + searchTerm.length].match(/\W/)){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix
-                            targetUri = uri.uri;
-                            targetLine = lineIx;
-                            targetCharacter = ix;
-                            break;
+                            var documentUpToCurrentCharacter = "";
+                            const hoverLine = lines[lineIx].substring(0,ix);
+                            for (var i = 0; i<lineIx; i++){
+                                documentUpToCurrentCharacter += lines[i];
+                            }
+                            documentUpToCurrentCharacter += hoverLine;
+                            const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
+                            const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
+                            let context = [];
+                            for (var i = 0; i<openBracketArray.length; i++){
+                                if (openBracketArray[i])
+                                    context.push(findKeyWords(bracketSplitDocument[i]));
+                            }
+                            console.log(context);
+                            if (arraysEqual(sequenceSplit, context)){
+                                targetUri = uri.uri;
+                                targetLine = lineIx;
+                                targetCharacter = ix;
+                                break;
+                            }
                         }
                     }
                 }
+                if(targetLine > -1)
+                    break;
             }
             if(targetLine > -1)
                 break;
