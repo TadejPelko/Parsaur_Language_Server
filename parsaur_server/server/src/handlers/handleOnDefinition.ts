@@ -1,5 +1,4 @@
 import { Definition, DefinitionParams, Location, TextDocument, TextDocuments } from "vscode-languageserver";
-import * as vscode from 'vscode';
 
 const regularExpressions = [
 	{
@@ -121,20 +120,19 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
                         const ix = documentLines[lineIx].indexOf(searchTerm); 
                         if (ix > -1 && documentLines[lineIx][ix + searchTerm.length].match(/\W/)){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix
                             let documentUpToCurrentCharacter = "";
-                            const hoverLine = lines[lineIx].substring(0,ix);
+                            const hoverLine = documentLines[lineIx].substring(0,ix);
                             for (let i = 0; i<lineIx; i++){
-                                documentUpToCurrentCharacter += lines[i];
+                                documentUpToCurrentCharacter += documentLines[i];
                             }
                             documentUpToCurrentCharacter += hoverLine;
                             const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
                             const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
                             const context = [];
                             for (let i = 0; i<openBracketArray.length; i++){
+                                const word = findKeyWords(bracketSplitDocument[i]);
                                 if (openBracketArray[i])
-                                    context.push(findKeyWords(bracketSplitDocument[i]));
+                                    context.push(word);
                             }
-                            //vscode.window.showInformationMessage(sequenceSplit.join("|"));
-                            //vscode.window.showInformationMessage(context.join("|"));
                             if (arraysEqual(sequenceSplit, context)){
                                 targetUri = uri.uri;
                                 targetLine = lineIx;

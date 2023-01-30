@@ -90,11 +90,10 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				return_res+= " | " + word;
 			}
 		}
-		return[{
-			//label: "brackets: " + openBracketArray.length + " | " + openBracketArray.join(" "),
-			label: "brackets: " + return_res,
-			kind: CompletionItemKind.Text,
-			data: keywords}];
+		// return[{
+		// 	label: "brackets: " + return_res,
+		// 	kind: CompletionItemKind.Text,
+		// 	data: keywords}];
 
 
 		return [
