@@ -1,4 +1,5 @@
 import { CompletionItem, CompletionItemKind, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
+import * as vscode from 'vscode';
 
 const regularExpressions = [
 	{
@@ -20,12 +21,12 @@ const regularExpressions = [
 ];
 
 const openBrackets = ['(', '{'];
-const closedBrackets = [')', '}']
+const closedBrackets = [')', '}'];
 
 function getOpenBrackets(documentString: string): boolean[]{
-	var bracketArray = [];
-	var stack = [];
-	var bracketIx = 0;
+	const bracketArray = [];
+	const stack = [];
+	let bracketIx = 0;
 	for (let i = 0; i < documentString.length; i++){
 		const char = documentString.charAt(i);
 		if (openBrackets.indexOf(char) !== -1){
@@ -50,11 +51,11 @@ function getOpenBrackets(documentString: string): boolean[]{
 }
 
 function findKeyWords(documentPart: string): string[]{
-	let contextArray: string[] = []; 
-	for (var regexp of regularExpressions){
+	const contextArray: string[] = []; 
+	for (const regexp of regularExpressions){
 		if (regexp.regex.test(documentPart)){
 			contextArray.push(regexp.name);
-			break
+			break;
 		}
 	}
 	return contextArray;
@@ -72,7 +73,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const doc = documents.get(textUri)!;
 		const text = doc.getText();
 		const lines = text.split('\n');
-		var documentUpToCurrentCharacter = "";
+		let documentUpToCurrentCharacter = "";
 		const hoverLine = lines[line].substring(0,character);
 		for (var i = 0; i<line; i++){
 			documentUpToCurrentCharacter += lines[i];
@@ -80,7 +81,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		documentUpToCurrentCharacter += hoverLine;
 		const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
 		const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-		var return_res = "";
+		let return_res = "";
 		for (var i = 0; i<openBracketArray.length; i++){
 			if (openBracketArray[i])
 				return_res+= " | " + findKeyWords(bracketSplitDocument[i]);
@@ -89,7 +90,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			//label: "brackets: " + openBracketArray.length + " | " + openBracketArray.join(" "),
 			label: "brackets: " + return_res,
 			kind: CompletionItemKind.Text,
-			data: documentUpToCurrentCharacter}]
+			data: documentUpToCurrentCharacter}];
 
 
 		return [
@@ -269,5 +270,5 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				data: 35
 			}
 		];
-	}
+	};
 }

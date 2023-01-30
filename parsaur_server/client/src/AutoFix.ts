@@ -11,11 +11,12 @@ import * as vscode from 'vscode';
    */
 const stringDistance = (a: string, b: string, maxDistance: number): boolean => {
 	const aL = a.length;
-	const bL = b.length;
+	const bL = b.Slength;
+	vscode.window.showInformationMessage("hey");
 	let distance = 0;
 	if (bL > aL){
 		if (bL - aL > maxDistance)
-			return false
+			return false;
 		for (var ix = 0; ix<bL; ix++){
 			if(a[ix] != b[ix])
 				distance++;
@@ -25,7 +26,7 @@ const stringDistance = (a: string, b: string, maxDistance: number): boolean => {
 		return distance + bL - aL <= maxDistance;
 	}else{
 		if (aL - bL > maxDistance)
-			return false
+			return false;
 		for (var ix = 0; ix<aL; ix++){
 			if(a[ix] != b[ix])
 				distance++;
@@ -34,7 +35,7 @@ const stringDistance = (a: string, b: string, maxDistance: number): boolean => {
 		}
 		return distance + aL - bL <= maxDistance;
 	}
-}
+};
 
  /**
    * Provides VSCode Quick fixes for the Parsaur language. 
@@ -81,14 +82,14 @@ export class AutoFix implements vscode.CodeActionProvider {
    * @returns Array of suggested fixes 
    */
 	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] | undefined {
-		let [fixes, start, stop] = this.extractFix(document, range);
+		const [fixes, start, stop] = this.extractFix(document, range);
 		if (fixes.length == 0) {
 			return;
 		}
-		let offsetLeft = start -range.start.character;
-		let offsetRight =  stop - range.start.character;
-		let suggestedFixesArray =[];
-		for (var fix of fixes){
+		const offsetLeft = start -range.start.character;
+		const offsetRight =  stop - range.start.character;
+		const suggestedFixesArray =[];
+		for (const fix of fixes){
 			suggestedFixesArray.push(this.createFix(document, range, fix, offsetLeft, offsetRight));
 		}
 
@@ -106,8 +107,8 @@ export class AutoFix implements vscode.CodeActionProvider {
 	private extractFix(document: vscode.TextDocument, range: vscode.Range): [Array<string>, number, number] {
 		const start = range.start;
 		const line = document.lineAt(start.line);
-		let [word, startIx, stopIx] = this.getWordAt(line.text, start.character);
-		let autoFixes = this.suggestFix(word);
+		const [word, startIx, stopIx] = this.getWordAt(line.text, start.character);
+		const autoFixes = this.suggestFix(word);
 		return [autoFixes, startIx, stopIx];
 	}
 
@@ -119,8 +120,8 @@ export class AutoFix implements vscode.CodeActionProvider {
    * @returns Array of suggested fixes 
    */
 	private suggestFix(word: string): string[] {
-		let arrayOfFixes = [];
-		for(var potentialFix of this.listOfAutoFixes){
+		const arrayOfFixes = [];
+		for(const potentialFix of this.listOfAutoFixes){
 			if (word == potentialFix)
 				continue;
 			if (word.toUpperCase() == potentialFix){

@@ -1,4 +1,6 @@
 import { Definition, DefinitionParams, Location, TextDocument, TextDocuments } from "vscode-languageserver";
+import * as vscode from 'vscode';
+
 const regularExpressions = [
 	{
 		regex: /CREATE\s+BASE/g,
@@ -11,12 +13,12 @@ const regularExpressions = [
 ];
 
 const openBrackets = ['(', '{'];
-const closedBrackets = [')', '}']
+const closedBrackets = [')', '}'];
 
 function getOpenBrackets(documentString: string): boolean[]{
-	var bracketArray = [];
-	var stack = [];
-	var bracketIx = 0;
+	const bracketArray = [];
+	const stack = [];
+	let bracketIx = 0;
 	for (let i = 0; i < documentString.length; i++){
 		const char = documentString.charAt(i);
 		if (openBrackets.indexOf(char) !== -1){
@@ -41,12 +43,12 @@ function getOpenBrackets(documentString: string): boolean[]{
 }
 
 function findKeyWords(documentPart: string): string{
-	let context: string = ""; 
-	for (var regexp of regularExpressions){
+	let context = ""; 
+	for (const regexp of regularExpressions){
 		if (regexp.regex.test(documentPart)){
-			let ix = documentPart.indexOf(regexp.name);
+			const ix = documentPart.indexOf(regexp.name);
             context = documentPart.substring(ix + regexp.name.length, documentPart.length-1);
-			break
+			break;
 		}
 	}
 	return context;
@@ -68,7 +70,7 @@ function getSequenceAt(str: string, pos: number) {
     pos = Number(pos) >>> 0;
 
     // Search for the word's beginning and end.
-    var left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
+    const left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
         right = str.slice(pos).search(/\W/);
 
     // The last word in the string is a special case.
@@ -85,7 +87,7 @@ function arraysEqual(a:any[], b:any[]) {
     if (a == null || b == null) return false;
     if (a.length !== b.length) return false;
 
-    for (var i = 0; i < a.length; ++i) {
+    for (let i = 0; i < a.length; ++i) {
       if (a[i] !== b[i]) return false;
     }
     return true;
@@ -107,31 +109,32 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
         let targetLine = -1;
         let targetCharacter = -1;
         let searchTermLength = -1;
-        const possibleConstructors = ["CREATE BASE ", "CREATE GRID "]
-        for (let constructor of possibleConstructors){
+        const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
+        for (const constructor of possibleConstructors){
             const searchTerm = constructor + term;
             searchTermLength = searchTerm.length;
-            for (let uri of allUris){
+            for (const uri of allUris){
                 const doc = documents.get(uri.uri)?.getText();
                 if (doc){
                     const documentLines = doc?.split('\n');
                     for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
                         const ix = documentLines[lineIx].indexOf(searchTerm); 
                         if (ix > -1 && documentLines[lineIx][ix + searchTerm.length].match(/\W/)){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix
-                            var documentUpToCurrentCharacter = "";
+                            let documentUpToCurrentCharacter = "";
                             const hoverLine = lines[lineIx].substring(0,ix);
-                            for (var i = 0; i<lineIx; i++){
+                            for (let i = 0; i<lineIx; i++){
                                 documentUpToCurrentCharacter += lines[i];
                             }
                             documentUpToCurrentCharacter += hoverLine;
                             const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
                             const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-                            let context = [];
-                            for (var i = 0; i<openBracketArray.length; i++){
+                            const context = [];
+                            for (let i = 0; i<openBracketArray.length; i++){
                                 if (openBracketArray[i])
                                     context.push(findKeyWords(bracketSplitDocument[i]));
                             }
-                            console.log(context);
+                            //vscode.window.showInformationMessage(sequenceSplit.join("|"));
+                            //vscode.window.showInformationMessage(context.join("|"));
                             if (arraysEqual(sequenceSplit, context)){
                                 targetUri = uri.uri;
                                 targetLine = lineIx;
@@ -152,6 +155,6 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
                 start: { line: targetLine, character: targetCharacter },
                 end: { line: targetLine, character: targetCharacter + searchTermLength }
             });
-    }
+    };
         
 }
