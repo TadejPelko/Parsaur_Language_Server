@@ -33,16 +33,16 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    */
 	private constructDependencyDictionary(){
 		const arr = this.edgelist.split('\t');
-		for(let line of arr) {
-			let splittedLine = line.split(' ');
-			let term1 = splittedLine[0];
+		for(const line of arr) {
+			const splittedLine = line.split(' ');
+			const term1 = splittedLine[0];
 			if (!term1)
-				continue
-			let term1_split = term1.split('.');
-			let term2 = splittedLine[1];
+				continue;
+			const term1_split = term1.split('.');
+			const term2 = splittedLine[1];
 			if (!term2)
-				continue
-			let term2_split = term2.split('.');
+				continue;
+			const term2_split = term2.split('.');
 
 			if (!(term1 in this.dependencyDictionary))
 				this.dependencyDictionary[term1_split[term1_split.length - 1]] = term1;
@@ -69,8 +69,8 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    */
 	private checkForChildren(item: string): boolean {
 		const arr = this.edgelist.split('\t');
-		for(let line of arr) {
-			let splittedLine = line.split(' ');
+		for(const line of arr) {
+			const splittedLine = line.split(' ');
 			if (splittedLine[0] === item){
 				return true;
 			}
@@ -89,12 +89,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    * @returns Promise of the list of the given definitions children as {@link Dependency} list.
    */
 	private readItemFromEdgelistPromise(item: string): Thenable<Dependency[]>{
-		let returnResult: Dependency[] = [];
+		const returnResult: Dependency[] = [];
 		const arr = this.edgelist.split('\t');
-		for(let line of arr) {
-			let splittedLine = line.split(' ');
+		for(const line of arr) {
+			const splittedLine = line.split(' ');
 			if (splittedLine[0] === item){
-				let splittedName = splittedLine[1].split('.')
+				const splittedName = splittedLine[1].split('.');
 				if (this.checkForChildren(splittedLine[1]))
 					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.Collapsed, []));
 				else
@@ -129,12 +129,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    * Provides an input box for the user. Maps the inputed definition name to its full path and writes it to clipboard.
    */
 	public async provideNodeSearch(){
-		let searchInput = vscode.window.showInputBox();
+		const searchInput = vscode.window.showInputBox();
 		if (!searchInput)
 			return;
 
-		let input_term = await searchInput;
-		let inputTermUpperCase = input_term.toUpperCase();
+		const input_term = await searchInput;
+		const inputTermUpperCase = input_term.toUpperCase();
 		if (inputTermUpperCase in this.dependencyDictionary){
 			vscode.env.clipboard.writeText(this.dependencyDictionary[inputTermUpperCase]);
 			vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[inputTermUpperCase]} to clipboard.`);

@@ -11,13 +11,13 @@ import * as vscode from 'vscode';
    */
 const stringDistance = (a: string, b: string, maxDistance: number): boolean => {
 	const aL = a.length;
-	const bL = b.Slength;
+	const bL = b.length;
 	vscode.window.showInformationMessage("hey");
 	let distance = 0;
 	if (bL > aL){
 		if (bL - aL > maxDistance)
 			return false;
-		for (var ix = 0; ix<bL; ix++){
+		for (let ix = 0; ix<bL; ix++){
 			if(a[ix] != b[ix])
 				distance++;
 			if(distance > maxDistance)
@@ -27,7 +27,7 @@ const stringDistance = (a: string, b: string, maxDistance: number): boolean => {
 	}else{
 		if (aL - bL > maxDistance)
 			return false;
-		for (var ix = 0; ix<aL; ix++){
+		for (let ix = 0; ix<aL; ix++){
 			if(a[ix] != b[ix])
 				distance++;
 			if(distance > maxDistance)
@@ -58,14 +58,14 @@ export class AutoFix implements vscode.CodeActionProvider {
 		const isSpace = (c) => /\W/.exec(c);
 		let start = position - 1;
 		let end = position;
-	  
+  
 		while (start >= 0 && !isSpace(str[start])) {
-		  start -= 1;
+			start -= 1;
 		}
 		start = Math.max(0, start + 1);
-	  
+
 		while (end < str.length && !isSpace(str[end])) {
-		  end += 1;
+			end += 1;
 		}
 		end = Math.max(start, end);
 		

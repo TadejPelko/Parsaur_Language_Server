@@ -113,5 +113,5 @@ export function getCompletionResolveHandler(){
 			item.documentation = 'docs';
 		}
 		return item;
-	}
+	};
 }

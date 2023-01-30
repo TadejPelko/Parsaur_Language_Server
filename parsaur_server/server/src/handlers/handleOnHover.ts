@@ -15,7 +15,7 @@ function getWordAt(str: string, pos: number) {
     pos = Number(pos) >>> 0;
 
     // Search for the word's beginning and end.
-    var left = str.slice(0, pos + 1).search(/\w+$/),
+    const left = str.slice(0, pos + 1).search(/\w+$/),
         right = str.slice(pos).search(/\W/);
 
     // The last word in the string is a special case.
@@ -36,7 +36,7 @@ function getWordAt(str: string, pos: number) {
 export function getHoverHandler(documents: TextDocuments<TextDocument>){
 	return (params: HoverParams): Promise<Hover> => {
 		const { textDocument } = params;
-		const { line, character } = params.position
+		const { line, character } = params.position;
 		const doc = documents.get(textDocument.uri)!;
 		const text = doc.getText();
 		
@@ -44,7 +44,7 @@ export function getHoverHandler(documents: TextDocuments<TextDocument>){
 		const hoverLine = lines[line];
 		const word = getWordAt(hoverLine, character);
 		return Promise.resolve({
-		  contents: [word],
+      contents: [word],
 		});
-	  }
+	};
 }
