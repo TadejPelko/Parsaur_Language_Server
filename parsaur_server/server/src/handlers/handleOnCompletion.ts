@@ -75,22 +75,26 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const lines = text.split('\n');
 		let documentUpToCurrentCharacter = "";
 		const hoverLine = lines[line].substring(0,character);
-		for (var i = 0; i<line; i++){
+		for (let i = 0; i<line; i++){
 			documentUpToCurrentCharacter += lines[i];
 		}
 		documentUpToCurrentCharacter += hoverLine;
 		const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
 		const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
 		let return_res = "";
-		for (var i = 0; i<openBracketArray.length; i++){
-			if (openBracketArray[i])
-				return_res+= " | " + findKeyWords(bracketSplitDocument[i]);
+		const keywords = [];
+		for (let i = 0; i<openBracketArray.length; i++){
+			const word = findKeyWords(bracketSplitDocument[i]);
+			if (openBracketArray[i]){
+				keywords.push(word);
+				return_res+= " | " + word;
+			}
 		}
 		return[{
 			//label: "brackets: " + openBracketArray.length + " | " + openBracketArray.join(" "),
 			label: "brackets: " + return_res,
 			kind: CompletionItemKind.Text,
-			data: documentUpToCurrentCharacter}];
+			data: keywords}];
 
 
 		return [
