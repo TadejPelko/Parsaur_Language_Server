@@ -111,6 +111,12 @@ export function getCompletionResolveHandler(){
 		} else if (item.data === 35) {
 			item.detail = 'TAG details';
 			item.documentation = 'docs';
+		}else if (item.data === 36) {
+			item.detail = 'LINK details';
+			item.documentation = 'docs';
+		}else if (item.data === 37) {
+			item.detail = 'PYLINK details';
+			item.documentation = 'docs';
 		}
 		return item;
 	};

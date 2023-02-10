@@ -50,15 +50,17 @@ function getOpenBrackets(documentString: string): boolean[]{
 	return bracketArray;
 }
 
-function findKeyWords(documentPart: string): string[]{
-	const contextArray: string[] = []; 
+function findKeyWords(documentPart: string): string{
+	//const contextArray: string[] = []; 
 	for (const regexp of regularExpressions){
 		if (regexp.regex.test(documentPart)){
-			contextArray.push(regexp.name);
+			//contextArray.push(regexp.name);
+			return regexp.name;
 			break;
 		}
 	}
-	return contextArray;
+	return "";
+	//return contextArray;
 }
 
 
@@ -95,7 +97,13 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		// 	kind: CompletionItemKind.Text,
 		// 	data: keywords}];
 
-
+		// if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
+		// 	return [			{
+		// 		label: 'CONSTRUCTOR',
+		// 		kind: CompletionItemKind.Text,
+		// 		data: 1
+		// 		}
+		// 	];
 		return [
 			{
 				label: 'CONSTRUCTOR',
@@ -271,6 +279,16 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				label: 'TAG',
 				kind: CompletionItemKind.Text,
 				data: 35
+			},
+			{
+				label: 'LINK',
+				kind: CompletionItemKind.Text,
+				data: 36
+			},
+			{
+				label: 'PYLINK',
+				kind: CompletionItemKind.Text,
+				data: 37
 			}
 		];
 	};
