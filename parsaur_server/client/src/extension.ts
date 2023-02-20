@@ -10,6 +10,7 @@ import { AutoFix } from './AutoFix';
 import { subscribeToDocumentChanges } from './diagnostics';
 import * as vscode from 'vscode';
 
+
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -24,7 +25,10 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
 	const nodeDependenciesProvider = new DepNodeProvider();
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
-	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => vscode.env.clipboard.writeText(node.full_name));
+	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
+		vscode.env.clipboard.writeText(node.full_name);
+		vscode.window.showInformationMessage(`Copied ${node.full_name} to clipboard.`);
+	});
 	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
 
 	context.subscriptions.push(

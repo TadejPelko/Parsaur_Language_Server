@@ -190,6 +190,8 @@ export class AutoFix implements vscode.CodeActionProvider {
 		"Remove",
 		"Inherit",
 		"AS",
-		"TAG"
+		"TAG",
+		"LINK",
+		"PYLINK"
 	];
 }

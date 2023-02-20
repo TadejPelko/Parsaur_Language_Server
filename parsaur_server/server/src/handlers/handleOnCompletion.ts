@@ -97,13 +97,13 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		// 	kind: CompletionItemKind.Text,
 		// 	data: keywords}];
 
-		// if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
-		// 	return [			{
-		// 		label: 'CONSTRUCTOR',
-		// 		kind: CompletionItemKind.Text,
-		// 		data: 1
-		// 		}
-		// 	];
+		if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
+			return [			{
+				label: 'CONSTRUCTOR',
+				kind: CompletionItemKind.Text,
+				data: 1
+				}
+			];
 		return [
 			{
 				label: 'CONSTRUCTOR',
