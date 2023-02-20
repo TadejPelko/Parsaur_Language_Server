@@ -117,6 +117,15 @@ export function getCompletionResolveHandler(){
 		}else if (item.data === 37) {
 			item.detail = 'PYLINK details';
 			item.documentation = 'docs';
+		}else if (item.data === 38) {
+			item.detail = 'GRID details';
+			item.documentation = 'docs';
+		}else if (item.data === 39) {
+			item.detail = 'DisplayItem details';
+			item.documentation = 'docs';
+		}else if (item.data === 40) {
+			item.detail = 'PROPERTY details';
+			item.documentation = 'docs';
 		}
 		return item;
 	};

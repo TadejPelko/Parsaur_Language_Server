@@ -17,6 +17,10 @@ const regularExpressions = [
 	{
 		regex: /ADD\s+CONSTRUCTOR/g,
 		name: "ADD CONSTRUCTOR"
+	},
+	{
+		regex: /CREATE\s+LINK/g,
+		name: "CREATE LINK"
 	}
 ];
 
@@ -92,18 +96,104 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				return_res+= " | " + word;
 			}
 		}
-		// return[{
-		// 	label: "brackets: " + return_res,
-		// 	kind: CompletionItemKind.Text,
-		// 	data: keywords}];
 
 		if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
-			return [			{
-				label: 'CONSTRUCTOR',
-				kind: CompletionItemKind.Text,
-				data: 1
+			return [	
+				{
+					label: 'CREATE',
+					kind: CompletionItemKind.Text,
+					data: 6
+				},
+				{
+					label: 'GRID',
+					kind: CompletionItemKind.Text,
+					data: 38
+				},
+				{
+					label: 'BASE',
+					kind: CompletionItemKind.Text,
+					data: 3
+				},
+				{
+					label: 'LIST',
+					kind: CompletionItemKind.Text,
+					data: 14
+				},
+				{
+					label: 'General',
+					kind: CompletionItemKind.Text,
+					data: 8
+				},
+				{
+					label: 'Optional',
+					kind: CompletionItemKind.Text,
+					data: 21
+				},
+				{
+					label: 'ListItem',
+					kind: CompletionItemKind.Text,
+					data: 28
+				},
+				{
+					label: 'ListDelimiter',
+					kind: CompletionItemKind.Text,
+					data: 27
+				},
+				{
+					label: 'DisplayItem',
+					kind: CompletionItemKind.Text,
+					data: 39
+				},
+				{
+					label: 'AS',
+					kind: CompletionItemKind.Text,
+					data: 16
 				}
 			];
+
+		if (keywords[keywords.length - 1] == "CREATE TAG")
+			return [	
+				{
+					label: 'AS',
+					kind: CompletionItemKind.Text,
+					data: 16
+				},
+				{
+					label: 'CREATE',
+					kind: CompletionItemKind.Text,
+					data: 6
+				},
+				{
+					label: 'TAG',
+					kind: CompletionItemKind.Text,
+					data: 35
+				}
+			];
+
+		if (keywords[keywords.length - 1] == "CREATE LINK")
+			return [	
+				{
+					label: 'AS',
+					kind: CompletionItemKind.Text,
+					data: 16
+				},
+				{
+					label: 'CREATE',
+					kind: CompletionItemKind.Text,
+					data: 6
+				},
+				{
+					label: 'ADD',
+					kind: CompletionItemKind.Text,
+					data: 5
+				},
+				{
+					label: 'LINK',
+					kind: CompletionItemKind.Text,
+					data: 36
+				}
+			];
+			
 		return [
 			{
 				label: 'CONSTRUCTOR',
@@ -289,6 +379,21 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 				label: 'PYLINK',
 				kind: CompletionItemKind.Text,
 				data: 37
+			},
+			{
+				label: 'GRID',
+				kind: CompletionItemKind.Text,
+				data: 38
+			},
+			{
+				label: 'DisplayItem',
+				kind: CompletionItemKind.Text,
+				data: 39
+			},
+			{
+				label: 'PROPERTY',
+				kind: CompletionItemKind.Text,
+				data: 40
 			}
 		];
 	};
