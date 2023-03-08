@@ -7,7 +7,7 @@ const regularExpressions = [
 	},
 	{
 		regex: /CREATE\s+GRID/g,
-		name: "CREATE LIST "
+		name: "CREATE GRID "
 	}
 ];
 

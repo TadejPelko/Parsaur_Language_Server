@@ -24,6 +24,32 @@ const regularExpressions = [
 	}
 ];
 
+const regularExpressionsContext = [
+	{
+		regex: /CREATE\s+BASE/g,
+		name: "CREATE BASE "
+	},
+	{
+		regex: /CREATE\s+GRID/g,
+		name: "CREATE GRID "
+	}
+];
+
+function findKeyWordsContext(documentPart: string): string{
+	let context = ""; 
+	for (const regexp of regularExpressionsContext){
+		if (regexp.regex.test(documentPart)){
+			const ix = documentPart.indexOf(regexp.name);
+            context = documentPart.substring(ix + regexp.name.length, documentPart.length-1);
+			console.log("CONTEXT");
+			console.log(documentPart);
+			console.log(regexp.name, ix, regexp.name.length, documentPart.length-1);
+			break;
+		}
+	}
+	return context;
+}
+
 const openBrackets = ['(', '{'];
 const closedBrackets = [')', '}'];
 
@@ -60,11 +86,78 @@ function findKeyWords(documentPart: string): string{
 		if (regexp.regex.test(documentPart)){
 			//contextArray.push(regexp.name);
 			return regexp.name;
-			break;
 		}
 	}
 	return "";
 	//return contextArray;
+}
+
+function arraysEqual(a:any[], b:any[]) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+
+    for (let i = 0; i < a.length; ++i) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocument>): any {
+	const allUris = documents.all();
+	const dotHierarchy = line.split(".");
+	// we look for the last term in dot hierarchy
+	const term = dotHierarchy[dotHierarchy.length - 2];
+	
+	let searchTermLength = -1;
+	const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
+	for (const constructor of possibleConstructors){
+		const searchTerm = constructor + term;
+		searchTermLength = searchTerm.length;
+		for (const uri of allUris){
+			const doc = documents.get(uri.uri)?.getText();
+			if (doc){
+				const documentLines = doc?.split('\n');
+				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
+					const ix = documentLines[lineIx].indexOf(searchTerm); 
+					if (ix > -1 && documentLines[lineIx][ix + searchTerm.length].match(/\W/)){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix
+						let documentUpToCurrentCharacter = "";
+						const hoverLine = documentLines[lineIx].substring(0,ix);
+						for (let i = 0; i<lineIx; i++){
+							documentUpToCurrentCharacter += documentLines[i];
+						}
+						documentUpToCurrentCharacter += hoverLine;
+						const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
+						const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
+						const context = [];
+						for (let i = 0; i<openBracketArray.length; i++){
+							const word = findKeyWordsContext(bracketSplitDocument[i]);
+							if (openBracketArray[i]){
+								console.log("ADDING TO CONTEXT: " + word);
+								context.push(word);
+							}
+						}
+						//remove last two terms from dotHierarchy to get context
+						dotHierarchy.pop();
+						dotHierarchy.pop();
+						console.log(dotHierarchy);
+						console.log(context);
+						if (arraysEqual(dotHierarchy, context)){
+							console.log("FOUND TERM: " + term);
+							return [
+								{					
+									label: term,
+									kind: CompletionItemKind.Text,
+									data: 6	
+								}
+							];
+						}
+					}
+				}
+			}
+		}
+	}
+	return [];
 }
 
 
@@ -73,14 +166,22 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-	
 		const textUri = _textDocumentPosition.textDocument.uri;
 		const { line, character } = _textDocumentPosition.position;
 		const doc = documents.get(textUri)!;
 		const text = doc.getText();
 		const lines = text.split('\n');
-		let documentUpToCurrentCharacter = "";
 		const hoverLine = lines[line].substring(0,character);
+
+		// If last character is "." we deploy InteliSense
+		const splitLine = hoverLine.split(" ");
+		if (splitLine[splitLine.length - 1].includes(".")){
+			const inteliSenseSuggestions = getInteliSenseSuggestions(splitLine[splitLine.length - 1], documents);
+			return inteliSenseSuggestions;
+		}
+	
+		// else we return the context based suggestions
+		let documentUpToCurrentCharacter = "";
 		for (let i = 0; i<line; i++){
 			documentUpToCurrentCharacter += lines[i];
 		}
