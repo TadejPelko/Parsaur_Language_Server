@@ -41,9 +41,6 @@ function findKeyWordsContext(documentPart: string): string{
 		if (regexp.regex.test(documentPart)){
 			const ix = documentPart.indexOf(regexp.name);
             context = documentPart.substring(ix + regexp.name.length, documentPart.length-1);
-			console.log("CONTEXT");
-			console.log(documentPart);
-			console.log(regexp.name, ix, regexp.name.length, documentPart.length-1);
 			break;
 		}
 	}
@@ -106,21 +103,24 @@ function arraysEqual(a:any[], b:any[]) {
 function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocument>): any {
 	const allUris = documents.all();
 	const dotHierarchy = line.split(".");
-	// we look for the last term in dot hierarchy
-	const term = dotHierarchy[dotHierarchy.length - 2];
-	
-	let searchTermLength = -1;
+	dotHierarchy.pop();
+	console.log("DOT");
+	console.log(dotHierarchy);
+	const returnArray = [];
+	let counter = 0;
+
 	const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
 	for (const constructor of possibleConstructors){
-		const searchTerm = constructor + term;
-		searchTermLength = searchTerm.length;
+		const searchTerm = constructor;
 		for (const uri of allUris){
 			const doc = documents.get(uri.uri)?.getText();
 			if (doc){
 				const documentLines = doc?.split('\n');
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
+					counter++;
 					const ix = documentLines[lineIx].indexOf(searchTerm); 
-					if (ix > -1 && documentLines[lineIx][ix + searchTerm.length].match(/\W/)){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix
+					if (ix > -1){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix -> could be irrelevant here, a copy legacy.
+						console.log("FOUND AT LINE: ", documentLines[lineIx]);
 						let documentUpToCurrentCharacter = "";
 						const hoverLine = documentLines[lineIx].substring(0,ix);
 						for (let i = 0; i<lineIx; i++){
@@ -133,31 +133,32 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 						for (let i = 0; i<openBracketArray.length; i++){
 							const word = findKeyWordsContext(bracketSplitDocument[i]);
 							if (openBracketArray[i]){
-								console.log("ADDING TO CONTEXT: " + word);
 								context.push(word);
 							}
 						}
 						//remove last two terms from dotHierarchy to get context
-						dotHierarchy.pop();
-						dotHierarchy.pop();
 						console.log(dotHierarchy);
 						console.log(context);
 						if (arraysEqual(dotHierarchy, context)){
-							console.log("FOUND TERM: " + term);
-							return [
-								{					
-									label: term,
-									kind: CompletionItemKind.Text,
-									data: 6	
+							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
+							console.log(extractTerm);
+							const split = extractTerm.split(" ");
+							const extracted = split[0];
+							console.log("FOUND TERM: " + extracted);
+							returnArray.push(
+								{
+									label: extracted,
+									kind: CompletionItemKind.Text
 								}
-							];
+							);
 						}
 					}
 				}
 			}
 		}
 	}
-	return [];
+	console.log("SEARCHED: " +  counter);
+	return returnArray;
 }
 
 
@@ -177,6 +178,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const splitLine = hoverLine.split(" ");
 		if (splitLine[splitLine.length - 1].includes(".")){
 			const inteliSenseSuggestions = getInteliSenseSuggestions(splitLine[splitLine.length - 1], documents);
+			console.log("RETURNING: ", inteliSenseSuggestions);
 			return inteliSenseSuggestions;
 		}
 	
