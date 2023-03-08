@@ -148,7 +148,65 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 							returnArray.push(
 								{
 									label: extracted,
-									kind: CompletionItemKind.Text
+									kind: CompletionItemKind.Text,
+									data: 0
+								}
+							);
+						}
+					}
+				}
+			}
+		}
+	}
+	console.log("SEARCHED: " +  counter);
+	return returnArray;
+}
+
+function getTopLevelTerms(documents:TextDocuments<TextDocument>){
+	const allUris = documents.all();
+	const returnArray = [];
+	let counter = 0;
+
+	const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
+	for (const constructor of possibleConstructors){
+		const searchTerm = constructor;
+		for (const uri of allUris){
+			const doc = documents.get(uri.uri)?.getText();
+			if (doc){
+				const documentLines = doc?.split('\n');
+				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
+					counter++;
+					const ix = documentLines[lineIx].indexOf(searchTerm); 
+					if (ix > -1){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix -> could be irrelevant here, a copy legacy.
+						console.log("FOUND AT LINE: ", documentLines[lineIx]);
+						let documentUpToCurrentCharacter = "";
+						const hoverLine = documentLines[lineIx].substring(0,ix);
+						for (let i = 0; i<lineIx; i++){
+							documentUpToCurrentCharacter += documentLines[i];
+						}
+						documentUpToCurrentCharacter += hoverLine;
+						const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
+						const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
+						const context = [];
+						for (let i = 0; i<openBracketArray.length; i++){
+							const word = findKeyWordsContext(bracketSplitDocument[i]);
+							if (openBracketArray[i]){
+								context.push(word);
+							}
+						}
+						//remove last two terms from dotHierarchy to get context
+						console.log(context);
+						if (arraysEqual([], context)){
+							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
+							console.log(extractTerm);
+							const split = extractTerm.split(" ");
+							const extracted = split[0];
+							console.log("FOUND TERM: " + extracted);
+							returnArray.push(
+								{
+									label: extracted,
+									kind: CompletionItemKind.Text,
+									data: 0
 								}
 							);
 						}
@@ -200,8 +258,10 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			}
 		}
 
+		const returnArray = getTopLevelTerms(documents); //Get top level definitions
+
 		if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
-			return [	
+			returnArray.push(...[	
 				{
 					label: 'CREATE',
 					kind: CompletionItemKind.Text,
@@ -252,10 +312,10 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 					kind: CompletionItemKind.Text,
 					data: 16
 				}
-			];
+			]);
 
-		if (keywords[keywords.length - 1] == "CREATE TAG")
-			return [	
+		else if (keywords[keywords.length - 1] == "CREATE TAG")
+			returnArray.push(...[	
 				{
 					label: 'AS',
 					kind: CompletionItemKind.Text,
@@ -271,10 +331,10 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 					kind: CompletionItemKind.Text,
 					data: 35
 				}
-			];
+			]);
 
-		if (keywords[keywords.length - 1] == "CREATE LINK")
-			return [	
+		else if (keywords[keywords.length - 1] == "CREATE LINK")
+			returnArray.push(...[	
 				{
 					label: 'AS',
 					kind: CompletionItemKind.Text,
@@ -295,209 +355,211 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 					kind: CompletionItemKind.Text,
 					data: 36
 				}
-			];
-			
-		return [
-			{
-				label: 'CONSTRUCTOR',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'CHARACTER',
-				kind: CompletionItemKind.Text,
-				data: 2
-			},
-			{
-				label: 'BASE',
-				kind: CompletionItemKind.Text,
-				data: 3
-			},
-			{
-				label: 'INT',
-				kind: CompletionItemKind.Text,
-				data: 4
-			},
-			{
-				label: 'ADD',
-				kind: CompletionItemKind.Text,
-				data: 5
-			},
-			{
-				label: 'CREATE',
-				kind: CompletionItemKind.Text,
-				data: 6
-			},
-			{
-				label: 'IMPORT',
-				kind: CompletionItemKind.Text,
-				data: 7
-			},
-			{
-				label: 'General',
-				kind: CompletionItemKind.Text,
-				data: 8
-			},
-			{
-				label: 'Decorator',
-				kind: CompletionItemKind.Text,
-				data: 9
-			},
-			{
-				label: 'DefaultItem',
-				kind: CompletionItemKind.Text,
-				data: 10
-			},
-			{
-				label: 'CastItem',
-				kind: CompletionItemKind.Text,
-				data: 11
-			},
-			{
-				label: 'ParallelDecorator',
-				kind: CompletionItemKind.Text,
-				data: 12
-			},
-			{
-				label: 'Generator',
-				kind: CompletionItemKind.Text,
-				data: 13
-			},
-			{
-				label: 'LIST',
-				kind: CompletionItemKind.Text,
-				data: 14
-			},
-			{
-				label: 'None',
-				kind: CompletionItemKind.Text,
-				data: 15
-			},
-			{
-				label: 'AS',
-				kind: CompletionItemKind.Text,
-				data: 16
-			},
-			{
-				label: 'GeneralStrict',
-				kind: CompletionItemKind.Text,
-				data: 17
-			},
-			{
-				label: 'Reference',
-				kind: CompletionItemKind.Text,
-				data: 18
-			},
-			{
-				label: 'BreakItem',
-				kind: CompletionItemKind.Text,
-				data: 19
-			},
-			{
-				label: 'DecoratorItem',
-				kind: CompletionItemKind.Text,
-				data: 20
-			},
-			{
-				label: 'Optional',
-				kind: CompletionItemKind.Text,
-				data: 21
-			},
-			{
-				label: 'OptionalGroup',
-				kind: CompletionItemKind.Text,
-				data: 22
-			},
-			{
-				label: 'Input',
-				kind: CompletionItemKind.Text,
-				data: 23
-			},
-			{
-				label: 'Output',
-				kind: CompletionItemKind.Text,
-				data: 24
-			},
-			{
-				label: 'BreakPersist',
-				kind: CompletionItemKind.Text,
-				data: 25
-			},
-			{
-				label: 'StopItem',
-				kind: CompletionItemKind.Text,
-				data: 26
-			},
-			{
-				label: 'ListDelimiter',
-				kind: CompletionItemKind.Text,
-				data: 27
-			},
-			{
-				label: 'ListItem',
-				kind: CompletionItemKind.Text,
-				data: 28
-			},
-			{
-				label: 'ContainItem',
-				kind: CompletionItemKind.Text,
-				data: 29
-			},
-			{
-				label: 'Rule',
-				kind: CompletionItemKind.Text,
-				data: 30
-			},
-			{
-				label: 'Condition',
-				kind: CompletionItemKind.Text,
-				data: 31
-			},
-			{
-				label: 'Display',
-				kind: CompletionItemKind.Text,
-				data: 32
-			},
-			{
-				label: 'Remove',
-				kind: CompletionItemKind.Text,
-				data: 33
-			},
-			{
-				label: 'Inherit',
-				kind: CompletionItemKind.Text,
-				data: 34
-			},			
-			{
-				label: 'TAG',
-				kind: CompletionItemKind.Text,
-				data: 35
-			},
-			{
-				label: 'LINK',
-				kind: CompletionItemKind.Text,
-				data: 36
-			},
-			{
-				label: 'PYLINK',
-				kind: CompletionItemKind.Text,
-				data: 37
-			},
-			{
-				label: 'GRID',
-				kind: CompletionItemKind.Text,
-				data: 38
-			},
-			{
-				label: 'DisplayItem',
-				kind: CompletionItemKind.Text,
-				data: 39
-			},
-			{
-				label: 'PROPERTY',
-				kind: CompletionItemKind.Text,
-				data: 40
-			}
-		];
+			]);
+
+		else
+			returnArray.push(...[
+				{
+					label: 'CONSTRUCTOR',
+					kind: CompletionItemKind.Text,
+					data: 1
+				},
+				{
+					label: 'CHARACTER',
+					kind: CompletionItemKind.Text,
+					data: 2
+				},
+				{
+					label: 'BASE',
+					kind: CompletionItemKind.Text,
+					data: 3
+				},
+				{
+					label: 'INT',
+					kind: CompletionItemKind.Text,
+					data: 4
+				},
+				{
+					label: 'ADD',
+					kind: CompletionItemKind.Text,
+					data: 5
+				},
+				{
+					label: 'CREATE',
+					kind: CompletionItemKind.Text,
+					data: 6
+				},
+				{
+					label: 'IMPORT',
+					kind: CompletionItemKind.Text,
+					data: 7
+				},
+				{
+					label: 'General',
+					kind: CompletionItemKind.Text,
+					data: 8
+				},
+				{
+					label: 'Decorator',
+					kind: CompletionItemKind.Text,
+					data: 9
+				},
+				{
+					label: 'DefaultItem',
+					kind: CompletionItemKind.Text,
+					data: 10
+				},
+				{
+					label: 'CastItem',
+					kind: CompletionItemKind.Text,
+					data: 11
+				},
+				{
+					label: 'ParallelDecorator',
+					kind: CompletionItemKind.Text,
+					data: 12
+				},
+				{
+					label: 'Generator',
+					kind: CompletionItemKind.Text,
+					data: 13
+				},
+				{
+					label: 'LIST',
+					kind: CompletionItemKind.Text,
+					data: 14
+				},
+				{
+					label: 'None',
+					kind: CompletionItemKind.Text,
+					data: 15
+				},
+				{
+					label: 'AS',
+					kind: CompletionItemKind.Text,
+					data: 16
+				},
+				{
+					label: 'GeneralStrict',
+					kind: CompletionItemKind.Text,
+					data: 17
+				},
+				{
+					label: 'Reference',
+					kind: CompletionItemKind.Text,
+					data: 18
+				},
+				{
+					label: 'BreakItem',
+					kind: CompletionItemKind.Text,
+					data: 19
+				},
+				{
+					label: 'DecoratorItem',
+					kind: CompletionItemKind.Text,
+					data: 20
+				},
+				{
+					label: 'Optional',
+					kind: CompletionItemKind.Text,
+					data: 21
+				},
+				{
+					label: 'OptionalGroup',
+					kind: CompletionItemKind.Text,
+					data: 22
+				},
+				{
+					label: 'Input',
+					kind: CompletionItemKind.Text,
+					data: 23
+				},
+				{
+					label: 'Output',
+					kind: CompletionItemKind.Text,
+					data: 24
+				},
+				{
+					label: 'BreakPersist',
+					kind: CompletionItemKind.Text,
+					data: 25
+				},
+				{
+					label: 'StopItem',
+					kind: CompletionItemKind.Text,
+					data: 26
+				},
+				{
+					label: 'ListDelimiter',
+					kind: CompletionItemKind.Text,
+					data: 27
+				},
+				{
+					label: 'ListItem',
+					kind: CompletionItemKind.Text,
+					data: 28
+				},
+				{
+					label: 'ContainItem',
+					kind: CompletionItemKind.Text,
+					data: 29
+				},
+				{
+					label: 'Rule',
+					kind: CompletionItemKind.Text,
+					data: 30
+				},
+				{
+					label: 'Condition',
+					kind: CompletionItemKind.Text,
+					data: 31
+				},
+				{
+					label: 'Display',
+					kind: CompletionItemKind.Text,
+					data: 32
+				},
+				{
+					label: 'Remove',
+					kind: CompletionItemKind.Text,
+					data: 33
+				},
+				{
+					label: 'Inherit',
+					kind: CompletionItemKind.Text,
+					data: 34
+				},			
+				{
+					label: 'TAG',
+					kind: CompletionItemKind.Text,
+					data: 35
+				},
+				{
+					label: 'LINK',
+					kind: CompletionItemKind.Text,
+					data: 36
+				},
+				{
+					label: 'PYLINK',
+					kind: CompletionItemKind.Text,
+					data: 37
+				},
+				{
+					label: 'GRID',
+					kind: CompletionItemKind.Text,
+					data: 38
+				},
+				{
+					label: 'DisplayItem',
+					kind: CompletionItemKind.Text,
+					data: 39
+				},
+				{
+					label: 'PROPERTY',
+					kind: CompletionItemKind.Text,
+					data: 40
+				}
+			]);
+		return returnArray;
 	};
 }
