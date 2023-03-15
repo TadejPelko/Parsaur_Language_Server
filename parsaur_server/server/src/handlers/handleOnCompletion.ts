@@ -1,5 +1,4 @@
 import { CompletionItem, CompletionItemKind, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
-import * as vscode from 'vscode';
 
 const regularExpressions = [
 	{
@@ -26,8 +25,24 @@ const regularExpressions = [
 
 const regularExpressionsContext = [
 	{
+		regex: /CREATE\s+TAG/g,
+		name: "CREATE TAG "
+	},
+	{
 		regex: /CREATE\s+BASE/g,
 		name: "CREATE BASE "
+	},
+	{
+		regex: /CREATE\s+LIST/g,
+		name: "CREATE LIST "
+	},
+	{
+		regex: /ADD\s+CONSTRUCTOR/g,
+		name: "ADD CONSTRUCTOR "
+	},
+	{
+		regex: /CREATE\s+LINK/g,
+		name: "CREATE LINK "
 	},
 	{
 		regex: /CREATE\s+GRID/g,
@@ -78,15 +93,12 @@ function getOpenBrackets(documentString: string): boolean[]{
 }
 
 function findKeyWords(documentPart: string): string{
-	//const contextArray: string[] = []; 
 	for (const regexp of regularExpressions){
 		if (regexp.regex.test(documentPart)){
-			//contextArray.push(regexp.name);
 			return regexp.name;
 		}
 	}
 	return "";
-	//return contextArray;
 }
 
 function arraysEqual(a:any[], b:any[]) {
@@ -104,12 +116,13 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 	const allUris = documents.all();
 	const dotHierarchy = line.split(".");
 	dotHierarchy.pop();
-	console.log("DOT");
-	console.log(dotHierarchy);
 	const returnArray = [];
 	let counter = 0;
 
-	const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
+	const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
+	for (const constructor of regularExpressionsContext)
+		possibleConstructors.push(constructor['name']);
+	
 	for (const constructor of possibleConstructors){
 		const searchTerm = constructor;
 		for (const uri of allUris){
@@ -120,7 +133,6 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 					counter++;
 					const ix = documentLines[lineIx].indexOf(searchTerm); 
 					if (ix > -1){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix -> could be irrelevant here, a copy legacy.
-						console.log("FOUND AT LINE: ", documentLines[lineIx]);
 						let documentUpToCurrentCharacter = "";
 						const hoverLine = documentLines[lineIx].substring(0,ix);
 						for (let i = 0; i<lineIx; i++){
@@ -136,15 +148,12 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 								context.push(word);
 							}
 						}
-						//remove last two terms from dotHierarchy to get context
-						console.log(dotHierarchy);
-						console.log(context);
 						if (arraysEqual(dotHierarchy, context)){
 							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
-							console.log(extractTerm);
 							const split = extractTerm.split(" ");
-							const extracted = split[0];
-							console.log("FOUND TERM: " + extracted);
+							let extracted = split[0];
+							if(extracted.endsWith(";"))
+								extracted = extracted.slice(0,-1);
 							returnArray.push(
 								{
 									label: extracted,
@@ -158,7 +167,6 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 			}
 		}
 	}
-	console.log("SEARCHED: " +  counter);
 	return returnArray;
 }
 
@@ -167,7 +175,10 @@ function getTopLevelTerms(documents:TextDocuments<TextDocument>){
 	const returnArray = [];
 	let counter = 0;
 
-	const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
+	const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
+	for (const constructor of regularExpressionsContext)
+		possibleConstructors.push(constructor['name']);
+
 	for (const constructor of possibleConstructors){
 		const searchTerm = constructor;
 		for (const uri of allUris){
@@ -178,7 +189,6 @@ function getTopLevelTerms(documents:TextDocuments<TextDocument>){
 					counter++;
 					const ix = documentLines[lineIx].indexOf(searchTerm); 
 					if (ix > -1){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix -> could be irrelevant here, a copy legacy.
-						console.log("FOUND AT LINE: ", documentLines[lineIx]);
 						let documentUpToCurrentCharacter = "";
 						const hoverLine = documentLines[lineIx].substring(0,ix);
 						for (let i = 0; i<lineIx; i++){
@@ -194,14 +204,12 @@ function getTopLevelTerms(documents:TextDocuments<TextDocument>){
 								context.push(word);
 							}
 						}
-						//remove last two terms from dotHierarchy to get context
-						console.log(context);
 						if (arraysEqual([], context)){
 							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
-							console.log(extractTerm);
 							const split = extractTerm.split(" ");
-							const extracted = split[0];
-							console.log("FOUND TERM: " + extracted);
+							let extracted = split[0];
+							if(extracted.endsWith(";")) 
+								extracted = extracted.slice(0,-1);
 							returnArray.push(
 								{
 									label: extracted,
@@ -215,7 +223,6 @@ function getTopLevelTerms(documents:TextDocuments<TextDocument>){
 			}
 		}
 	}
-	console.log("SEARCHED: " +  counter);
 	return returnArray;
 }
 
@@ -236,7 +243,6 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const splitLine = hoverLine.split(" ");
 		if (splitLine[splitLine.length - 1].includes(".")){
 			const inteliSenseSuggestions = getInteliSenseSuggestions(splitLine[splitLine.length - 1], documents);
-			console.log("RETURNING: ", inteliSenseSuggestions);
 			return inteliSenseSuggestions;
 		}
 	
