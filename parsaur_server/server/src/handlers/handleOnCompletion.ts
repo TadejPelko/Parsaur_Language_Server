@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, CompletionList, TextDocument, TextDocumentPositionParams, TextDocuments, VersionedTextDocumentIdentifier } from 'vscode-languageserver';
 
 const regularExpressions = [
 	{
@@ -112,14 +112,14 @@ function arraysEqual(a:any[], b:any[]) {
     return true;
 }
 
-function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line = "", context=false): any {
+function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line = "", context=false): CompletionList {
 	const allUris = documents.all();
 	let dotHierarchy: any[] = [];
 	if (context){
 		dotHierarchy = line.split(".");
 		dotHierarchy.pop();
 	}
-	const returnArray = [];
+	const returnArray: CompletionList = {isIncomplete: true, items:[]};
 	const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
 	for (const constructor of regularExpressionsContext)
 		possibleConstructors.push(constructor['name']);
@@ -141,20 +141,20 @@ function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line =
 						documentUpToCurrentCharacter += hoverLine;
 						const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
 						const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-						const context = [];
+						const termContext = [];
 						for (let i = 0; i<openBracketArray.length; i++){
 							const word = findKeyWordsContext(bracketSplitDocument[i]);
 							if (openBracketArray[i]){
-								context.push(word);
+								termContext.push(word);
 							}
 						}
-						if (arraysEqual(dotHierarchy, context)){
+						if (arraysEqual(dotHierarchy, termContext)){
 							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
 							const split = extractTerm.split(" ");
 							let extracted = split[0];
 							if(extracted.endsWith(";"))
 								extracted = extracted.slice(0,-1);
-							returnArray.push(
+							returnArray.items.push(
 								{
 									label: extracted,
 									kind: CompletionItemKind.Text,
@@ -172,7 +172,7 @@ function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line =
 
 
 export function getCompletionHandler(documents: TextDocuments<TextDocument>){
-	return (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+	return (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
@@ -208,10 +208,9 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			}
 		}
 
-		const returnArray = getInteliSenseSuggestions(documents); //Get top level definitions
-
+		const returnArray: CompletionList = getInteliSenseSuggestions(documents); //Get top level definitions
 		if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
-			returnArray.push(...[	
+			returnArray.items.push(...[	
 				{
 					label: 'CREATE',
 					kind: CompletionItemKind.Text,
@@ -265,7 +264,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			]);
 
 		else if (keywords[keywords.length - 1] == "CREATE TAG")
-			returnArray.push(...[	
+			returnArray.items.push(...[	
 				{
 					label: 'AS',
 					kind: CompletionItemKind.Text,
@@ -284,7 +283,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			]);
 
 		else if (keywords[keywords.length - 1] == "CREATE LINK")
-			returnArray.push(...[	
+			returnArray.items.push(...[	
 				{
 					label: 'AS',
 					kind: CompletionItemKind.Text,
@@ -308,7 +307,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			]);
 
 		else
-			returnArray.push(...[
+			returnArray.items.push(...[
 				{
 					label: 'CONSTRUCTOR',
 					kind: CompletionItemKind.Text,
