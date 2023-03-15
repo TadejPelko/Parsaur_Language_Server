@@ -50,6 +50,13 @@ const regularExpressionsContext = [
 	}
 ];
 
+/**
+   * Searches for key words in the document refering to relevant context
+   * 
+   * @param documentPart - string of relevant part of document content
+   * 
+   * @returns Found key word
+*/
 function findKeyWordsContext(documentPart: string): string{
 	let context = ""; 
 	for (const regexp of regularExpressionsContext){
@@ -65,6 +72,14 @@ function findKeyWordsContext(documentPart: string): string{
 const openBrackets = ['(', '{'];
 const closedBrackets = [')', '}'];
 
+
+/**
+   * Finds out which brackets in document are open at the typing position  
+   * 
+   * @param documentString - string of document content
+   * 
+   * @returns Array of booleans representing the open/closed (true/false) state of brackets in content 
+*/
 function getOpenBrackets(documentString: string): boolean[]{
 	const bracketArray = [];
 	const stack = [];
@@ -92,6 +107,13 @@ function getOpenBrackets(documentString: string): boolean[]{
 	return bracketArray;
 }
 
+/**
+   * Searches for key words in the document
+   * 
+   * @param documentPart - string of relevant part of document content
+   * 
+   * @returns Found key word
+*/
 function findKeyWords(documentPart: string): string{
 	for (const regexp of regularExpressions){
 		if (regexp.regex.test(documentPart)){
@@ -112,6 +134,15 @@ function arraysEqual(a:any[], b:any[]) {
     return true;
 }
 
+/**
+   * Suggests relevant code completions.
+   * 
+   * @param documents - open documents in workspace
+   * @param line - relevant line in document
+   * @param context - use hierarchy context for code suggestions 
+   * 
+   * @returns code suggestion {@link CompletionList}
+*/
 function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line = "", context=false): CompletionList {
 	const allUris = documents.all();
 	let dotHierarchy: any[] = [];
@@ -170,7 +201,13 @@ function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line =
 	return returnArray;
 }
 
-
+/**
+   * Suggests relevant code completions.
+   * 
+   * @param documents - open documents in workspace
+   * 
+   * @returns the completion handler
+*/
 export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 	return (_textDocumentPosition: TextDocumentPositionParams): CompletionList => {
 		// The pass parameter contains the position of the text document in

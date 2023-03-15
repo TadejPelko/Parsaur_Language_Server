@@ -30,6 +30,14 @@ const regularExpressions = [
 const openBrackets = ['(', '{'];
 const closedBrackets = [')', '}'];
 
+/**
+   * Finds out which brackets in document are open at the typing position  
+   * 
+   * @param documentString - string of document content
+   * 
+   * @returns Array of booleans representing the open/closed (true/false) state of brackets in content 
+*/
+
 function getOpenBrackets(documentString: string): boolean[]{
 	const bracketArray = [];
 	const stack = [];
@@ -57,6 +65,13 @@ function getOpenBrackets(documentString: string): boolean[]{
 	return bracketArray;
 }
 
+/**
+   * Searches for key words in the document
+   * 
+   * @param documentPart - string of relevant part of document content
+   * 
+   * @returns Found key word
+*/
 function findKeyWords(documentPart: string): string{
 	let context = ""; 
 	for (const regexp of regularExpressions){
@@ -77,7 +92,7 @@ function findKeyWords(documentPart: string): string{
    * @param position - position of the character within the string
    * 
    * @returns The word of the character 
-   */
+*/
 
 function getSequenceAt(str: string, pos: number) {
     // Perform type conversions.
@@ -108,6 +123,13 @@ function arraysEqual(a:any[], b:any[]) {
     return true;
   }
 
+/**
+   * Finds the requested definition of a term.
+   * 
+   * @param documents - open documents in workspace
+   * 
+   * @returns the definitions handler
+*/
 export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
     return (params: DefinitionParams) =>{
         const doc = documents.get(params.textDocument.uri)!;
