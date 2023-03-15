@@ -2,8 +2,24 @@ import { Definition, DefinitionParams, Location, TextDocument, TextDocuments } f
 
 const regularExpressions = [
 	{
+		regex: /CREATE\s+TAG/g,
+		name: "CREATE TAG "
+	},
+	{
 		regex: /CREATE\s+BASE/g,
 		name: "CREATE BASE "
+	},
+	{
+		regex: /CREATE\s+LIST/g,
+		name: "CREATE LIST "
+	},
+	{
+		regex: /ADD\s+CONSTRUCTOR/g,
+		name: "ADD CONSTRUCTOR "
+	},
+	{
+		regex: /CREATE\s+LINK/g,
+		name: "CREATE LINK "
 	},
 	{
 		regex: /CREATE\s+GRID/g,
@@ -108,7 +124,9 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
         let targetLine = -1;
         let targetCharacter = -1;
         let searchTermLength = -1;
-        const possibleConstructors = ["CREATE BASE ", "CREATE GRID "];
+        const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
+        for (const constructor of regularExpressions)
+            possibleConstructors.push(constructor['name']);
         for (const constructor of possibleConstructors){
             const searchTerm = constructor + term;
             searchTermLength = searchTerm.length;
@@ -153,6 +171,5 @@ export function getOnDefinitionHandler(documents: TextDocuments<TextDocument>){
                 start: { line: targetLine, character: targetCharacter },
                 end: { line: targetLine, character: targetCharacter + searchTermLength }
             });
-    };
-        
+    };  
 }
