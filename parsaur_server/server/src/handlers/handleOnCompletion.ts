@@ -112,13 +112,14 @@ function arraysEqual(a:any[], b:any[]) {
     return true;
 }
 
-function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocument>): any {
+function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line = "", context=false): any {
 	const allUris = documents.all();
-	const dotHierarchy = line.split(".");
-	dotHierarchy.pop();
+	let dotHierarchy: any[] = [];
+	if (context){
+		dotHierarchy = line.split(".");
+		dotHierarchy.pop();
+	}
 	const returnArray = [];
-	let counter = 0;
-
 	const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
 	for (const constructor of regularExpressionsContext)
 		possibleConstructors.push(constructor['name']);
@@ -130,9 +131,8 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 			if (doc){
 				const documentLines = doc?.split('\n');
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
-					counter++;
 					const ix = documentLines[lineIx].indexOf(searchTerm); 
-					if (ix > -1){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix -> could be irrelevant here, a copy legacy.
+					if (ix > -1){
 						let documentUpToCurrentCharacter = "";
 						const hoverLine = documentLines[lineIx].substring(0,ix);
 						for (let i = 0; i<lineIx; i++){
@@ -170,62 +170,6 @@ function getInteliSenseSuggestions(line:string, documents:TextDocuments<TextDocu
 	return returnArray;
 }
 
-function getTopLevelTerms(documents:TextDocuments<TextDocument>){
-	const allUris = documents.all();
-	const returnArray = [];
-	let counter = 0;
-
-	const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
-	for (const constructor of regularExpressionsContext)
-		possibleConstructors.push(constructor['name']);
-
-	for (const constructor of possibleConstructors){
-		const searchTerm = constructor;
-		for (const uri of allUris){
-			const doc = documents.get(uri.uri)?.getText();
-			if (doc){
-				const documentLines = doc?.split('\n');
-				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
-					counter++;
-					const ix = documentLines[lineIx].indexOf(searchTerm); 
-					if (ix > -1){ // if the next character is an alphanumeric character then this is is a different definition with the same prefix -> could be irrelevant here, a copy legacy.
-						let documentUpToCurrentCharacter = "";
-						const hoverLine = documentLines[lineIx].substring(0,ix);
-						for (let i = 0; i<lineIx; i++){
-							documentUpToCurrentCharacter += documentLines[i];
-						}
-						documentUpToCurrentCharacter += hoverLine;
-						const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
-						const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-						const context = [];
-						for (let i = 0; i<openBracketArray.length; i++){
-							const word = findKeyWordsContext(bracketSplitDocument[i]);
-							if (openBracketArray[i]){
-								context.push(word);
-							}
-						}
-						if (arraysEqual([], context)){
-							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
-							const split = extractTerm.split(" ");
-							let extracted = split[0];
-							if(extracted.endsWith(";")) 
-								extracted = extracted.slice(0,-1);
-							returnArray.push(
-								{
-									label: extracted,
-									kind: CompletionItemKind.Text,
-									data: 0
-								}
-							);
-						}
-					}
-				}
-			}
-		}
-	}
-	return returnArray;
-}
-
 
 export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 	return (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
@@ -239,10 +183,10 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const lines = text.split('\n');
 		const hoverLine = lines[line].substring(0,character);
 
-		// If last character is "." we deploy InteliSense
+		// If last character is "." we deploy contextual InteliSense
 		const splitLine = hoverLine.split(" ");
 		if (splitLine[splitLine.length - 1].includes(".")){
-			const inteliSenseSuggestions = getInteliSenseSuggestions(splitLine[splitLine.length - 1], documents);
+			const inteliSenseSuggestions = getInteliSenseSuggestions(documents, splitLine[splitLine.length - 1], true);
 			return inteliSenseSuggestions;
 		}
 	
@@ -264,7 +208,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			}
 		}
 
-		const returnArray = getTopLevelTerms(documents); //Get top level definitions
+		const returnArray = getInteliSenseSuggestions(documents); //Get top level definitions
 
 		if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
 			returnArray.push(...[	
