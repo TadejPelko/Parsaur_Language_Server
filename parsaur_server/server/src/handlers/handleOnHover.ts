@@ -44,7 +44,7 @@ export function getHoverHandler(documents: TextDocuments<TextDocument>){
 		const hoverLine = lines[line];
 		const word = getWordAt(hoverLine, character);
 		return Promise.resolve({
-      contents: [word],
+            contents: [word],
 		});
 	};
 }

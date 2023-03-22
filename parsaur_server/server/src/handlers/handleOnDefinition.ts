@@ -37,7 +37,6 @@ const closedBrackets = [')', '}'];
    * 
    * @returns Array of booleans representing the open/closed (true/false) state of brackets in content 
 */
-
 function getOpenBrackets(documentString: string): boolean[]{
 	const bracketArray = [];
 	const stack = [];
@@ -93,7 +92,6 @@ function findKeyWords(documentPart: string): string{
    * 
    * @returns The word of the character 
 */
-
 function getSequenceAt(str: string, pos: number) {
     // Perform type conversions.
     str = String(str);

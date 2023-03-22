@@ -9,13 +9,16 @@ import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
 import { subscribeToDocumentChanges } from './diagnostics';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
 
 import {
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
-	TransportKind
+	TransportKind,
+	DocumentSelector,
+	FileSystemWatcher
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -36,6 +39,18 @@ export function activate(context: ExtensionContext) {
 			providedCodeActionKinds: AutoFix.providedCodeActionKinds
 		})
 	);
+
+	const provider2 = vscode.languages.registerCompletionItemProvider(
+		'prs',
+		{
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				return getCodeCompletions(document, position);
+			}
+		},
+		'.' // triggered whenever a '.' is being typed
+	);
+
+	context.subscriptions.push(provider2);
 	
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
@@ -80,6 +95,232 @@ export function activate(context: ExtensionContext) {
 
 	// Start the client. This will also launch the server
 	client.start();
+}
+const regularExpressions = [
+	{
+		regex: /CREATE\s+TAG/g,
+		name: "CREATE TAG"
+	},
+	{
+		regex: /CREATE\s+BASE/g,
+		name: "CREATE BASE"
+	},
+	{
+		regex: /CREATE\s+LIST/g,
+		name: "CREATE LIST"
+	},
+	{
+		regex: /ADD\s+CONSTRUCTOR/g,
+		name: "ADD CONSTRUCTOR"
+	},
+	{
+		regex: /CREATE\s+LINK/g,
+		name: "CREATE LINK"
+	}
+];
+
+const regularExpressionsContext = [
+	{
+		regex: /CREATE\s+TAG/g,
+		name: "CREATE TAG "
+	},
+	{
+		regex: /CREATE\s+BASE/g,
+		name: "CREATE BASE "
+	},
+	{
+		regex: /CREATE\s+LIST/g,
+		name: "CREATE LIST "
+	},
+	{
+		regex: /ADD\s+CONSTRUCTOR/g,
+		name: "ADD CONSTRUCTOR "
+	},
+	{
+		regex: /CREATE\s+LINK/g,
+		name: "CREATE LINK "
+	},
+	{
+		regex: /CREATE\s+GRID/g,
+		name: "CREATE GRID "
+	}
+];
+
+/**
+   * Searches for key words in the document refering to relevant context
+   * 
+   * @param documentPart - string of relevant part of document content
+   * 
+   * @returns Found key word
+*/
+function findKeyWordsContext(documentPart: string): string{
+	let context = ""; 
+	for (const regexp of regularExpressionsContext){
+		if (regexp.regex.test(documentPart)){
+			const ix = documentPart.indexOf(regexp.name);
+            context = documentPart.substring(ix + regexp.name.length, documentPart.length-1);
+			break;
+		}
+	}
+	return context;
+}
+
+const openBrackets = ['(', '{'];
+const closedBrackets = [')', '}'];
+
+
+/**
+   * Finds out which brackets in document are open at the typing position  
+   * 
+   * @param documentString - string of document content
+   * 
+   * @returns Array of booleans representing the open/closed (true/false) state of brackets in content 
+*/
+function getOpenBrackets(documentString: string): boolean[]{
+	const bracketArray = [];
+	const stack = [];
+	let bracketIx = 0;
+	for (let i = 0; i < documentString.length; i++){
+		const char = documentString.charAt(i);
+		if (openBrackets.indexOf(char) !== -1){
+			bracketArray.push(true);
+			stack.push({
+				bracket: char,
+				index: bracketIx
+			});
+			bracketIx++;
+		}
+		if (closedBrackets.indexOf(char) !== -1){
+			bracketIx++;
+			bracketArray.push(false);
+			if (stack[stack.length - 1]['bracket'] === openBrackets[closedBrackets.indexOf(char)]){
+				bracketArray[stack[stack.length - 1]['index']] = false;
+				stack.pop();
+			}
+		}
+	}
+
+	return bracketArray;
+}
+
+/**
+   * Searches for key words in the document
+   * 
+   * @param documentPart - string of relevant part of document content
+   * 
+   * @returns Found key word
+*/
+function findKeyWords(documentPart: string): string{
+	for (const regexp of regularExpressions){
+		if (regexp.regex.test(documentPart)){
+			return regexp.name;
+		}
+	}
+	return "";
+}
+
+function arraysEqual(a:any[], b:any[]) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+
+    for (let i = 0; i < a.length; ++i) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+/**
+   * Suggests relevant code completions.
+   * 
+   * @param line - relevant line in document
+   * 
+   * @returns code suggestion {@link CompletionList}
+*/
+function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
+	let dotHierarchy: any[] = [];
+	dotHierarchy = line.split(".");
+	dotHierarchy.pop();
+	const returnArray = [];
+	const possibleConstructors = [];
+	const workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.getWorkspaceFolder(document.uri);
+	const glob = workspaceFolder.name + '/*';
+	for (const constructor of regularExpressionsContext)
+		possibleConstructors.push(constructor['name']);
+	
+	for (const constructor of possibleConstructors){
+		const searchTerm = constructor;
+		vscode.workspace.findFiles('**/{*.txt,*.mql}', null, 1000).then((uris: vscode.Uri[] ) => {      
+			uris.forEach((uri: vscode.Uri) => {              
+				const split = uri.path.split('/');
+				split.shift(); // remove the unnecessary "c:"
+				fs.readFile(split.join("/"), (err, data) => {
+					if (err) throw err;
+					const doc = data.toString();
+					if (doc){
+						const documentLines = doc?.split('\n');
+						for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
+							const ix = documentLines[lineIx].indexOf(searchTerm); 
+							if (ix > -1){
+								let documentUpToCurrentCharacter = "";
+								const hoverLine = documentLines[lineIx].substring(0,ix);
+								for (let i = 0; i<lineIx; i++){
+									documentUpToCurrentCharacter += documentLines[i];
+								}
+								documentUpToCurrentCharacter += hoverLine;
+								const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
+								const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
+								const termContext = [];
+								for (let i = 0; i<openBracketArray.length; i++){
+									const word = findKeyWordsContext(bracketSplitDocument[i]);
+									if (openBracketArray[i]){
+										termContext.push(word);
+									}
+								}
+								console.log(searchTerm);
+								console.log(dotHierarchy);
+								console.log(termContext);
+								console.log();
+								if (arraysEqual(dotHierarchy, termContext)){
+									const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
+									const split = extractTerm.split(" ");
+									let extracted = split[0];
+									if(extracted.endsWith(";"))
+										extracted = extracted.slice(0,-1);
+									console.log(extracted);
+									returnArray.push(
+										new vscode.CompletionItem(extracted, vscode.CompletionItemKind.Method)
+									);
+								}
+							}
+						}
+					}
+				});
+			});
+		}); 
+	}
+	return returnArray;
+}
+
+/**
+   * Suggests relevant code completions.
+   * 
+   * @param document - open documents in workspace
+   * 
+   * @returns the completion handler
+*/
+export function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
+	// The pass parameter contains the position of the text document in
+	// which code complete got requested. For the example we ignore this
+	// info and always provide the same completion items.
+	const line = position.line;
+	const character = position.character;
+	const doc = document;
+	const text = doc.getText();
+	const lines = text.split('\n');
+	const hoverLine = lines[line].substring(0,character);
+	const inteliSenseSuggestions = getInteliSenseSuggestions(document, hoverLine);
+	return inteliSenseSuggestions;
 }
 
 export function deactivate(): Thenable<void> | undefined {

@@ -235,13 +235,11 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		documentUpToCurrentCharacter += hoverLine;
 		const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
 		const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-		let return_res = "";
 		const keywords = [];
 		for (let i = 0; i<openBracketArray.length; i++){
 			const word = findKeyWords(bracketSplitDocument[i]);
 			if (openBracketArray[i]){
 				keywords.push(word);
-				return_res+= " | " + word;
 			}
 		}
 
