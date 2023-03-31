@@ -43,8 +43,11 @@ export function activate(context: ExtensionContext) {
 	const provider2 = vscode.languages.registerCompletionItemProvider(
 		'prs',
 		{
-			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
-				return getCodeCompletions(document, position);
+			async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				const val = await getCodeCompletions(document, position);
+
+				console.log("FINAL", val);
+				return val;
 			}
 		},
 		'.' // triggered whenever a '.' is being typed
@@ -96,28 +99,6 @@ export function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server
 	client.start();
 }
-const regularExpressions = [
-	{
-		regex: /CREATE\s+TAG/g,
-		name: "CREATE TAG"
-	},
-	{
-		regex: /CREATE\s+BASE/g,
-		name: "CREATE BASE"
-	},
-	{
-		regex: /CREATE\s+LIST/g,
-		name: "CREATE LIST"
-	},
-	{
-		regex: /ADD\s+CONSTRUCTOR/g,
-		name: "ADD CONSTRUCTOR"
-	},
-	{
-		regex: /CREATE\s+LINK/g,
-		name: "CREATE LINK"
-	}
-];
 
 const regularExpressionsContext = [
 	{
@@ -127,18 +108,6 @@ const regularExpressionsContext = [
 	{
 		regex: /CREATE\s+BASE/g,
 		name: "CREATE BASE "
-	},
-	{
-		regex: /CREATE\s+LIST/g,
-		name: "CREATE LIST "
-	},
-	{
-		regex: /ADD\s+CONSTRUCTOR/g,
-		name: "ADD CONSTRUCTOR "
-	},
-	{
-		regex: /CREATE\s+LINK/g,
-		name: "CREATE LINK "
 	},
 	{
 		regex: /CREATE\s+GRID/g,
@@ -203,21 +172,6 @@ function getOpenBrackets(documentString: string): boolean[]{
 	return bracketArray;
 }
 
-/**
-   * Searches for key words in the document
-   * 
-   * @param documentPart - string of relevant part of document content
-   * 
-   * @returns Found key word
-*/
-function findKeyWords(documentPart: string): string{
-	for (const regexp of regularExpressions){
-		if (regexp.regex.test(documentPart)){
-			return regexp.name;
-		}
-	}
-	return "";
-}
 
 function arraysEqual(a:any[], b:any[]) {
     if (a === b) return true;
@@ -237,7 +191,7 @@ function arraysEqual(a:any[], b:any[]) {
    * 
    * @returns code suggestion {@link CompletionList}
 */
-function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
+async function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
 	let dotHierarchy: any[] = [];
 	dotHierarchy = line.split(".");
 	dotHierarchy.pop();
@@ -250,7 +204,7 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
 	
 	for (const constructor of possibleConstructors){
 		const searchTerm = constructor;
-		vscode.workspace.findFiles('**/{*.txt,*.mql}', null, 1000).then((uris: vscode.Uri[] ) => {      
+		vscode.workspace.findFiles('**/{*.mql}', null, 1000).then((uris: vscode.Uri[] ) => {      
 			uris.forEach((uri: vscode.Uri) => {              
 				const split = uri.path.split('/');
 				split.shift(); // remove the unnecessary "c:"
@@ -277,20 +231,17 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
 										termContext.push(word);
 									}
 								}
-								console.log(searchTerm);
-								console.log(dotHierarchy);
-								console.log(termContext);
-								console.log();
 								if (arraysEqual(dotHierarchy, termContext)){
 									const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
 									const split = extractTerm.split(" ");
 									let extracted = split[0];
 									if(extracted.endsWith(";"))
 										extracted = extracted.slice(0,-1);
-									console.log(extracted);
 									returnArray.push(
 										new vscode.CompletionItem(extracted, vscode.CompletionItemKind.Method)
 									);
+									console.log("returning", returnArray);
+									return returnArray;
 								}
 							}
 						}
@@ -299,7 +250,12 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
 			});
 		}); 
 	}
-	return returnArray;
+	
+	if (returnArray.length > 0){
+		console.log("returning", returnArray);
+		return returnArray;
+
+	}
 }
 
 /**
@@ -309,7 +265,7 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
    * 
    * @returns the completion handler
 */
-export function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
+export async function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
 	// The pass parameter contains the position of the text document in
 	// which code complete got requested. For the example we ignore this
 	// info and always provide the same completion items.
@@ -319,7 +275,7 @@ export function getCodeCompletions(document: vscode.TextDocument, position: vsco
 	const text = doc.getText();
 	const lines = text.split('\n');
 	const hoverLine = lines[line].substring(0,character);
-	const inteliSenseSuggestions = getInteliSenseSuggestions(document, hoverLine);
+	const inteliSenseSuggestions = await getInteliSenseSuggestions(document, hoverLine);
 	return inteliSenseSuggestions;
 }
 
