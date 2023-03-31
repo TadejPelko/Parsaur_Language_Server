@@ -66,9 +66,9 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			// Tell the client that this server supports code completion.
-			// completionProvider: {
-			// 	resolveProvider: true
-			// },
+			completionProvider: {
+				resolveProvider: true
+			},
 			hoverProvider: true,
 			definitionProvider: true
 		}
@@ -202,11 +202,11 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 
 // This handler provides the initial list of the completion items.
-// connection.onCompletion(getCompletionHandler(documents));
+connection.onCompletion(getCompletionHandler(documents));
 
 // // This handler resolves additional information for the item selected in
 // // the completion list.
-// connection.onCompletionResolve(getCompletionResolveHandler());
+connection.onCompletionResolve(getCompletionResolveHandler());
 
 
 // This Handler resolves the "Go to definition" request.

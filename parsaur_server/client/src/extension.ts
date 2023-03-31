@@ -23,6 +23,7 @@ import {
 
 let client: LanguageClient;
 
+const suggestionsDictionary = {};
 
 
 export function activate(context: ExtensionContext) {
@@ -43,10 +44,8 @@ export function activate(context: ExtensionContext) {
 	const provider2 = vscode.languages.registerCompletionItemProvider(
 		'prs',
 		{
-			async provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
-				const val = await getCodeCompletions(document, position);
-
-				console.log("FINAL", val);
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				const val = getCodeCompletions(document, position);
 				return val;
 			}
 		},
@@ -191,10 +190,13 @@ function arraysEqual(a:any[], b:any[]) {
    * 
    * @returns code suggestion {@link CompletionList}
 */
-async function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
+function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 	let dotHierarchy: any[] = [];
-	dotHierarchy = line.split(".");
+	dotHierarchy = word.split(".");
 	dotHierarchy.pop();
+	if (dotHierarchy.join(".") in suggestionsDictionary){
+		return suggestionsDictionary[dotHierarchy.join(".")];
+	}
 	const returnArray = [];
 	const possibleConstructors = [];
 	const workspaceFolder: vscode.WorkspaceFolder | undefined = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -240,8 +242,14 @@ async function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
 									returnArray.push(
 										new vscode.CompletionItem(extracted, vscode.CompletionItemKind.Method)
 									);
-									console.log("returning", returnArray);
-									return returnArray;
+									console.log("ADDING", dotHierarchy.join("."), extracted );
+									if (dotHierarchy.join(".") in suggestionsDictionary){
+										if (!(containsObject(extracted, suggestionsDictionary[dotHierarchy.join(".")])))
+											suggestionsDictionary[dotHierarchy.join(".")].push(new vscode.CompletionItem(extracted, vscode.CompletionItemKind.Method));
+									}
+									else{
+										suggestionsDictionary[dotHierarchy.join(".")] = [new vscode.CompletionItem(extracted, vscode.CompletionItemKind.Method)];
+									}
 								}
 							}
 						}
@@ -250,12 +258,16 @@ async function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
 			});
 		}); 
 	}
-	
-	if (returnArray.length > 0){
-		console.log("returning", returnArray);
-		return returnArray;
+	return returnArray;
+}
 
-	}
+function containsObject(obj, list) {
+    for (let i = 0; i < list.length; i++) {
+        if (list[i].label === obj) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -265,7 +277,7 @@ async function getInteliSenseSuggestions(document: vscode.TextDocument, line) {
    * 
    * @returns the completion handler
 */
-export async function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
+export function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
 	// The pass parameter contains the position of the text document in
 	// which code complete got requested. For the example we ignore this
 	// info and always provide the same completion items.
@@ -275,7 +287,9 @@ export async function getCodeCompletions(document: vscode.TextDocument, position
 	const text = doc.getText();
 	const lines = text.split('\n');
 	const hoverLine = lines[line].substring(0,character);
-	const inteliSenseSuggestions = await getInteliSenseSuggestions(document, hoverLine);
+	const wordSplit = hoverLine.split(" ");
+	const word = wordSplit[wordSplit.length - 1];
+	const inteliSenseSuggestions = getInteliSenseSuggestions(document, word);
 	return inteliSenseSuggestions;
 }
 
