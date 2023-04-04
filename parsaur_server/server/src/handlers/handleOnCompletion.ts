@@ -219,6 +219,13 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const text = doc.getText();
 		const lines = text.split('\n');
 		const hoverLine = lines[line].substring(0,character);
+
+		// If last character is "." we deploy contextual InteliSense
+		const splitLine = hoverLine.split(" ");
+		if (splitLine[splitLine.length - 1].includes(".")){
+			const inteliSenseSuggestions = getInteliSenseSuggestions(documents, splitLine[splitLine.length - 1], true);
+			return inteliSenseSuggestions;
+		}
 	
 		// else we return the context based suggestions
 		let documentUpToCurrentCharacter = "";

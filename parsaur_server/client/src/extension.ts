@@ -194,6 +194,8 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 	let dotHierarchy: any[] = [];
 	dotHierarchy = word.split(".");
 	dotHierarchy.pop();
+	if (dotHierarchy.length < 1)
+		return;
 	if (dotHierarchy.join(".") in suggestionsDictionary){
 		return suggestionsDictionary[dotHierarchy.join(".")];
 	}
@@ -207,7 +209,8 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 	for (const constructor of possibleConstructors){
 		const searchTerm = constructor;
 		vscode.workspace.findFiles('**/{*.mql}', null, 1000).then((uris: vscode.Uri[] ) => {      
-			uris.forEach((uri: vscode.Uri) => {              
+			uris.forEach((uri: vscode.Uri) => {   
+				let found = false;           
 				const split = uri.path.split('/');
 				split.shift(); // remove the unnecessary "c:"
 				fs.readFile(split.join("/"), (err, data) => {
@@ -237,11 +240,12 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 									const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
 									const split = extractTerm.split(" ");
 									let extracted = split[0];
-									if(extracted.endsWith(";"))
+									if(extracted.endsWith(";") || extracted.endsWith("{"))
 										extracted = extracted.slice(0,-1);
 									returnArray.push(
 										new vscode.CompletionItem(extracted, vscode.CompletionItemKind.Method)
 									);
+									found = true;
 									console.log("ADDING", dotHierarchy.join("."), extracted );
 									if (dotHierarchy.join(".") in suggestionsDictionary){
 										if (!(containsObject(extracted, suggestionsDictionary[dotHierarchy.join(".")])))
@@ -255,7 +259,9 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 						}
 					}
 				});
-			});
+				if (found)
+					return returnArray;
+			}); // open file
 		}); 
 	}
 	return returnArray;

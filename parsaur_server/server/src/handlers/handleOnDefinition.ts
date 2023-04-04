@@ -10,18 +10,6 @@ const regularExpressions = [
 		name: "CREATE BASE "
 	},
 	{
-		regex: /CREATE\s+LIST/g,
-		name: "CREATE LIST "
-	},
-	{
-		regex: /ADD\s+CONSTRUCTOR/g,
-		name: "ADD CONSTRUCTOR "
-	},
-	{
-		regex: /CREATE\s+LINK/g,
-		name: "CREATE LINK "
-	},
-	{
 		regex: /CREATE\s+GRID/g,
 		name: "CREATE GRID "
 	}
