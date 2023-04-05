@@ -8,6 +8,7 @@ import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
 import { subscribeToDocumentChanges } from './diagnostics';
+import { parseDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
@@ -52,8 +53,13 @@ export function activate(context: ExtensionContext) {
 		'.' // triggered whenever a '.' is being typed
 	);
 
+	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+		console.log("SAVED DOC", document);
+	});
+
 	context.subscriptions.push(provider2);
-	
+	console.log("Beginning parsing");
+	parseDefinitions();
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
 	// subscribeToDocumentChanges(context, emojiDiagnostics);
