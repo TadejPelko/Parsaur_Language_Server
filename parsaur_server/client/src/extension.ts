@@ -8,7 +8,7 @@ import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
 import { subscribeToDocumentChanges } from './diagnostics';
-import { parseDefinitions } from './definitionsParsing';
+import { getDefinitions, parseDefinitions, postProcessingDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
@@ -58,8 +58,8 @@ export function activate(context: ExtensionContext) {
 	});
 
 	context.subscriptions.push(provider2);
-	console.log("Beginning parsing");
-	parseDefinitions();
+	const definitionsDictionary = {};
+	getDefinitions().then((res) => console.log("dobu sm", res));
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
 	// subscribeToDocumentChanges(context, emojiDiagnostics);
