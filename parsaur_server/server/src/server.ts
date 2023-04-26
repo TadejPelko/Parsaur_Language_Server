@@ -210,7 +210,7 @@ connection.onCompletionResolve(getCompletionResolveHandler());
 
 
 // This Handler resolves the "Go to definition" request.
-connection.onDefinition(getOnDefinitionHandler(documents));
+// connection.onDefinition(getOnDefinitionHandler(documents));
 
 // This Handler resolves the "On Hover" information.
 connection.onHover(getHoverHandler(documents));

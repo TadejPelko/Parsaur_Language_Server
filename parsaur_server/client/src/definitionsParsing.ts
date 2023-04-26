@@ -99,7 +99,9 @@ export async function parseDefinitions(){
 									fileName: uri.path,
 									lineIndex: lineIx,
 									children: [],
-									imports: []
+									imports: [],
+									line: lineIx,
+									character: termIx
 								};
 								// add children
 								if (dictionaryKeyContext.length > 0)

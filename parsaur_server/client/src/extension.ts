@@ -7,19 +7,16 @@ import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
-import { subscribeToDocumentChanges } from './diagnostics';
-import { getDefinitions, parseDefinitions, postProcessingDefinitions } from './definitionsParsing';
+//import { subscribeToDocumentChanges } from './diagnostics';
+import { getDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 
 
 import {
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
-	TransportKind,
-	DocumentSelector,
-	FileSystemWatcher
+	TransportKind
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -28,21 +25,25 @@ let suggestionsDictionary = {};
 
 
 export function activate(context: ExtensionContext) {
-	const nodeDependenciesProvider = new DepNodeProvider();
-	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
+	// const nodeDependenciesProvider = new DepNodeProvider();
+	//window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
 		vscode.env.clipboard.writeText(node.full_name);
 		vscode.window.showInformationMessage(`Copied ${node.full_name} to clipboard.`);
 	});
-	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
+	//vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
 
+	getDefinitions().then((res) => suggestionsDictionary = res);
+	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+		console.log("SAVED DOC", document);
+		getDefinitions().then((res) => suggestionsDictionary = res);
+	});
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider('prs', new AutoFix(), {
 			providedCodeActionKinds: AutoFix.providedCodeActionKinds
 		})
 	);
-
-	const provider2 = vscode.languages.registerCompletionItemProvider(
+	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
 		'prs',
 		{
 			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
@@ -55,15 +56,23 @@ export function activate(context: ExtensionContext) {
 			}
 		},
 		'.' // triggered whenever a '.' is being typed
-	);
-
-	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
-		console.log("SAVED DOC", document);
-		getDefinitions().then((res) => suggestionsDictionary = res);
-	});
-
-	context.subscriptions.push(provider2);
-	getDefinitions().then((res) => suggestionsDictionary = res);
+	));
+	context.subscriptions.push(vscode.languages.registerDefinitionProvider(
+		'prs',
+		{
+			provideDefinition(document, position, token) {
+				const hoverLine = document.lineAt(position.line).text;
+				const sequence = getSequenceAt(hoverLine, position.character); // word for definition search
+				for (const keyName in suggestionsDictionary){
+					if (suggestionsDictionary[keyName]['fullName'] == sequence){
+						const position = new vscode.Position(suggestionsDictionary[keyName]['line'], suggestionsDictionary[keyName]['character']);
+						const file = vscode.Uri.file(suggestionsDictionary[keyName]['fileName']);
+						return new vscode.Location(file, position);
+					}
+				}
+			},
+		}
+	));
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
 	// subscribeToDocumentChanges(context, emojiDiagnostics);
@@ -166,9 +175,36 @@ export function getCodeCompletions(document: vscode.TextDocument, position: vsco
 	return inteliSenseSuggestions;
 }
 
+/**
+   * Extracts the word of the character. 
+   * 
+   * @param str - string in which the word we want to extract is found
+   * @param position - position of the character within the string
+   * 
+   * @returns The word of the character 
+*/
+function getSequenceAt(str: string, pos: number) {
+    // Perform type conversions.
+    str = String(str);
+    pos = Number(pos) >>> 0;
+
+    // Search for the word's beginning and end.
+    const left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
+        right = str.slice(pos).search(/\W/);
+
+    // The last word in the string is a special case.
+    if (right < 0) {
+        return str.slice(left);
+    }
+
+    // Return the word, using the located bounds to extract it from the string.
+    return str.slice(left, right + pos);
+}
+
 export function deactivate(): Thenable<void> | undefined {
 	if (!client) {
 		return undefined;
 	}
 	return client.stop();
 }
+
