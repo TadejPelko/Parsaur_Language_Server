@@ -59,6 +59,7 @@ export function activate(context: ExtensionContext) {
 
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		console.log("SAVED DOC", document);
+		getDefinitions().then((res) => suggestionsDictionary = res);
 	});
 
 	context.subscriptions.push(provider2);
