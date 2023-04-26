@@ -72,6 +72,10 @@ export async function parseDefinitions(){
 							definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]]["imports"].push(fullPath);
 						}
 					} else {
+						let tst = "";
+						if ( documentLines[lineIx].indexOf("BREAK") > -1){
+							tst = documentLines[lineIx];
+						}
 						for (const expression of regularExpressions){
 							const searchTerm = expression.name;
 							const termIx = documentLines[lineIx].indexOf(searchTerm); // This is also hierarchy depth if we assume that characters before the search term are \t
@@ -97,15 +101,17 @@ export async function parseDefinitions(){
 									context: context.join("."),
 									isTopLevel: topLevel,
 									fileName: uri.path,
-									lineIndex: lineIx,
 									children: [],
+									childrenKeys: [],
 									imports: [],
 									line: lineIx,
 									character: termIx
 								};
 								// add children
-								if (dictionaryKeyContext.length > 0)
+								if (dictionaryKeyContext.length > 0){
 									definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]]["children"].push(extractedName);
+									definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]]["childrenKeys"].push(definitionKey);
+								}
 								
 								context.push(extractedName);
 								dictionaryKeyContext.push(definitionKey);
@@ -127,14 +133,8 @@ export function postProcessingDefinitions(definitionsDictionary){ //Replaces imp
 			for (const keyNameImport in definitionsDictionary){
 				if (definitionsDictionary[keyNameImport]['fileName'] == importName && definitionsDictionary[keyNameImport]['isTopLevel']){
 					definitionsDictionary[keyName]['children'].push(definitionsDictionary[keyNameImport]['name']);
-					if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] != '')
-						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
-					else if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] != '')
-						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name'];
-					else if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] == '')
-						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
-					else // if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] == '')
-						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name'];
+					definitionsDictionary[keyName]['childrenKeys'].push(keyNameImport);
+					recursivelyAddContext(definitionsDictionary, keyNameImport, keyName);
 				}
 			}
 		}
@@ -148,5 +148,20 @@ export function postProcessingDefinitions(definitionsDictionary){ //Replaces imp
 	}
 	console.log("Finished post-parsing procedure");
 	console.log(definitionsDictionary);
+	return definitionsDictionary;
+}
+
+export function recursivelyAddContext(definitionsDictionary, keyNameImport, keyName){
+	if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] != '')
+	definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
+	else if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] != '')
+		definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name'];
+	else if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] == '')
+		definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
+	else // if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] == '')
+		definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name'];
+
+	for (const child of definitionsDictionary[keyNameImport]['childrenKeys'])
+		definitionsDictionary = recursivelyAddContext(definitionsDictionary, child, keyName);
 	return definitionsDictionary;
 }
