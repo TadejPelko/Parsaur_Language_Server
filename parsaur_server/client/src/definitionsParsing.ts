@@ -21,11 +21,6 @@ const TAB_TO_SPACE_CONVERSION = 4;
 export async function getDefinitions(){
 	const res = await parseDefinitions();
 	return postProcessingDefinitions(res);
-	// return new Promise((resolve) =>{
-	// 	parseDefinitions().then((res) => {
-	// 		resolve(postProcessingDefinitions(res));
-	// 	});
-	// });
 }
 
 export function constructDictionaryKey(context, extractedName, uri){
@@ -38,13 +33,11 @@ export function constructDictionaryKey(context, extractedName, uri){
 export async function parseDefinitions(){
 	console.log("Beginning parsing");
 	const definitionsDictionary = {};
-	//await vscode.workspace.findFiles('**/{*.mql}', null, 1000).then((uris: vscode.Uri[] ) => {    
 	const uris = await vscode.workspace.findFiles('**/{*.mql}');
-	//uris.forEach((uri: vscode.Uri) => { 
 	for (const uri of uris){
 		const split = uri.path.split('/');
 		split.shift(); // remove the unnecessary "c:"
-		await fs.promises.readFile(split.join("/")).then((res) => {
+		await fs.promises.readFile(split.join("/")).then((res) => { 	//	This might be changed to parallel
 			const doc = res.toString();
 			const context = [];
 			const dictionaryKeyContext = [];
@@ -97,10 +90,12 @@ export async function parseDefinitions(){
 									context.pop();
 									dictionaryKeyContext.pop();
 								}
+								const topLevel = context.length == 0;
 								const definitionKey = constructDictionaryKey(context, extractedName, uri);
 								definitionsDictionary[definitionKey] = {
 									name: extractedName,
 									context: context.join("."),
+									isTopLevel: topLevel,
 									fileName: uri.path,
 									lineIndex: lineIx,
 									children: [],
@@ -121,7 +116,6 @@ export async function parseDefinitions(){
 	} // open file
 	console.log("Finished parsing definitions");
 	return definitionsDictionary;
-	//});
 }
 
 export function postProcessingDefinitions(definitionsDictionary){ //Replaces imports with children - top level definitions of imported file
@@ -129,12 +123,28 @@ export function postProcessingDefinitions(definitionsDictionary){ //Replaces imp
 	for (const keyName in definitionsDictionary){
 		for (const importName of definitionsDictionary[keyName]['imports']){
 			for (const keyNameImport in definitionsDictionary){
-				if (definitionsDictionary[keyNameImport]['fileName'] == importName && definitionsDictionary[keyNameImport]['context'] == ''){
+				if (definitionsDictionary[keyNameImport]['fileName'] == importName && definitionsDictionary[keyNameImport]['isTopLevel']){
 					definitionsDictionary[keyName]['children'].push(definitionsDictionary[keyNameImport]['name']);
+					if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] != '')
+						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
+					else if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] != '')
+						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name'];
+					else if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] == '')
+						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
+					else // if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] == '')
+						definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name'];
 				}
 			}
 		}
 	}
+
+	for (const keyName in definitionsDictionary){
+		if (definitionsDictionary[keyName]['context'] != '')
+			definitionsDictionary[keyName]['fullName'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']; 
+		else
+			definitionsDictionary[keyName]['fullName'] = definitionsDictionary[keyName]['name']; 
+	}
 	console.log("Finished post-parsing procedure");
+	console.log(definitionsDictionary);
 	return definitionsDictionary;
 }
