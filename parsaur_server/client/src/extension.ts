@@ -56,6 +56,15 @@ export function activate(context: ExtensionContext) {
 		},
 		'.' // triggered whenever a '.' is being typed
 	));
+	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
+		'prs',
+		{
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				return [new vscode.CompletionItem("FILE_ELEMENT", vscode.CompletionItemKind.Method)];
+			}
+		},
+		'?' // triggered whenever a '?' is being typed
+	));
 	context.subscriptions.push(vscode.languages.registerDefinitionProvider(
 		'prs',
 		{
@@ -176,7 +185,10 @@ export function getCodeCompletions(document: vscode.TextDocument, position: vsco
 	const lines = text.split('\n');
 	const hoverLine = lines[line].substring(0,character);
 	const wordSplit = hoverLine.split(" ");
-	const word = wordSplit[wordSplit.length - 1];
+	let word = wordSplit[wordSplit.length - 1];
+	if(word.startsWith('('))
+		word = word.slice(1);
+	word = word.trim();
 	const inteliSenseSuggestions = getInteliSenseSuggestions(document, word);
 	return inteliSenseSuggestions;
 }
