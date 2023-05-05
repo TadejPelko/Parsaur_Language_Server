@@ -22,53 +22,6 @@ const regularExpressions = [
 		name: "CREATE LINK"
 	}
 ];
-
-const regularExpressionsContext = [
-	{
-		regex: /CREATE\s+TAG/g,
-		name: "CREATE TAG "
-	},
-	{
-		regex: /CREATE\s+BASE/g,
-		name: "CREATE BASE "
-	},
-	{
-		regex: /CREATE\s+LIST/g,
-		name: "CREATE LIST "
-	},
-	{
-		regex: /ADD\s+CONSTRUCTOR/g,
-		name: "ADD CONSTRUCTOR "
-	},
-	{
-		regex: /CREATE\s+LINK/g,
-		name: "CREATE LINK "
-	},
-	{
-		regex: /CREATE\s+GRID/g,
-		name: "CREATE GRID "
-	}
-];
-
-/**
-   * Searches for key words in the document refering to relevant context
-   * 
-   * @param documentPart - string of relevant part of document content
-   * 
-   * @returns Found key word
-*/
-function findKeyWordsContext(documentPart: string): string{
-	let context = ""; 
-	for (const regexp of regularExpressionsContext){
-		if (regexp.regex.test(documentPart)){
-			const ix = documentPart.indexOf(regexp.name);
-            context = documentPart.substring(ix + regexp.name.length, documentPart.length-1);
-			break;
-		}
-	}
-	return context;
-}
-
 const openBrackets = ['(', '{'];
 const closedBrackets = [')', '}'];
 
@@ -123,83 +76,6 @@ function findKeyWords(documentPart: string): string{
 	return "";
 }
 
-function arraysEqual(a:any[], b:any[]) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (a.length !== b.length) return false;
-
-    for (let i = 0; i < a.length; ++i) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
-
-/**
-   * Suggests relevant code completions.
-   * 
-   * @param documents - open documents in workspace
-   * @param line - relevant line in document
-   * @param context - use hierarchy context for code suggestions 
-   * 
-   * @returns code suggestion {@link CompletionList}
-*/
-function getInteliSenseSuggestions(documents:TextDocuments<TextDocument>, line = "", context=false): CompletionList {
-	const allUris = documents.all();
-	let dotHierarchy: any[] = [];
-	if (context){
-		dotHierarchy = line.split(".");
-		dotHierarchy.pop();
-	}
-	const returnArray: CompletionList = {isIncomplete: true, items:[]};
-	const possibleConstructors = []; // ["CREATE BASE ", "CREATE GRID "];
-	for (const constructor of regularExpressionsContext)
-		possibleConstructors.push(constructor['name']);
-	
-	for (const constructor of possibleConstructors){
-		const searchTerm = constructor;
-		for (const uri of allUris){
-			const doc = documents.get(uri.uri)?.getText();
-			if (doc){
-				const documentLines = doc?.split('\n');
-				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
-					const ix = documentLines[lineIx].indexOf(searchTerm); 
-					if (ix > -1){
-						let documentUpToCurrentCharacter = "";
-						const hoverLine = documentLines[lineIx].substring(0,ix);
-						for (let i = 0; i<lineIx; i++){
-							documentUpToCurrentCharacter += documentLines[i];
-						}
-						documentUpToCurrentCharacter += hoverLine;
-						const openBracketArray = getOpenBrackets(documentUpToCurrentCharacter);
-						const bracketSplitDocument = documentUpToCurrentCharacter.split(/\(|\)|\{|\}/);
-						const termContext = [];
-						for (let i = 0; i<openBracketArray.length; i++){
-							const word = findKeyWordsContext(bracketSplitDocument[i]);
-							if (openBracketArray[i]){
-								termContext.push(word);
-							}
-						}
-						if (arraysEqual(dotHierarchy, termContext)){
-							const extractTerm = documentLines[lineIx].substring(ix + searchTerm.length, documentLines[lineIx].length-1);
-							const split = extractTerm.split(" ");
-							let extracted = split[0];
-							if(extracted.endsWith(";"))
-								extracted = extracted.slice(0,-1);
-							returnArray.items.push(
-								{
-									label: extracted,
-									kind: CompletionItemKind.Text,
-									data: 0
-								}
-							);
-						}
-					}
-				}
-			}
-		}
-	}
-	return returnArray;
-}
 
 /**
    * Suggests relevant code completions.
@@ -219,13 +95,6 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 		const text = doc.getText();
 		const lines = text.split('\n');
 		const hoverLine = lines[line].substring(0,character);
-
-		// If last character is "." we deploy contextual InteliSense
-		const splitLine = hoverLine.split(" ");
-		if (splitLine[splitLine.length - 1].includes(".")){
-			const inteliSenseSuggestions = getInteliSenseSuggestions(documents, splitLine[splitLine.length - 1], true);
-			return inteliSenseSuggestions;
-		}
 	
 		// else we return the context based suggestions
 		let documentUpToCurrentCharacter = "";
@@ -243,7 +112,7 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 			}
 		}
 
-		const returnArray: CompletionList = getInteliSenseSuggestions(documents); //Get top level definitions
+		const returnArray: CompletionList = {isIncomplete: true, items:[]};
 		if (keywords[keywords.length - 1] == "ADD CONSTRUCTOR")
 			returnArray.items.push(...[	
 				{
