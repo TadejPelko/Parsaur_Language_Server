@@ -82,8 +82,8 @@ export async function parseDefinitions(){
 							termIx = documentLines[lineIx].indexOf("?");
 							if (trimmedLine.indexOf(" AS ") > -1){
 								const splittedByAs = trimmedLine.split(" AS "); // I assume there is only one "AS"
-								const splitBySpace = splittedByAs[splittedByAs.length - 1].split(" "); 
-								extractedName = splitBySpace[0];
+								const asTerm = splittedByAs[splittedByAs.length - 1]; // split by { and ' '
+								extractedName = getSequenceAt(asTerm, 0);
 							}else{
 								const splittedByDot = trimmedLine.split(".");
 								extractedName = splittedByDot[splittedByDot.length - 1];
@@ -183,4 +183,30 @@ export function recursivelyAddContext(definitionsDictionary, keyNameImport, keyN
 	for (const child of definitionsDictionary[keyNameImport]['childrenKeys'])
 		definitionsDictionary = recursivelyAddContext(definitionsDictionary, child, keyName);
 	return definitionsDictionary;
+}
+
+/**
+   * Extracts the word of the character. 
+   * 
+   * @param str - string in which the word we want to extract is found
+   * @param position - position of the character within the string
+   * 
+   * @returns The word of the character 
+*/
+function getSequenceAt(str: string, pos: number) {
+    // Perform type conversions.
+    str = String(str);
+    pos = Number(pos) >>> 0;
+
+    // Search for the word's beginning and end.
+    const left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
+        right = str.slice(pos).search(/\W/);
+
+    // The last word in the string is a special case.
+    if (right < 0) {
+        return str.slice(left);
+    }
+
+    // Return the word, using the located bounds to extract it from the string.
+    return str.slice(left, right + pos);
 }
