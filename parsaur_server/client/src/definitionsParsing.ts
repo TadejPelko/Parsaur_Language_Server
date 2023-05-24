@@ -86,7 +86,7 @@ export async function parseDefinitions(){
 								extractedName = getSequenceAt(asTerm, 0);
 							}else{
 								const splittedByDot = trimmedLine.split(".");
-								extractedName = splittedByDot[splittedByDot.length - 1];
+								extractedName = getSequenceAt(splittedByDot[splittedByDot.length - 1], 0);
 							}
 						}
 						if (!special){
