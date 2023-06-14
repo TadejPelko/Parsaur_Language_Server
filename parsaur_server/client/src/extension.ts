@@ -5,7 +5,7 @@
 
 import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
-import { Dependency, DepNodeProvider } from './nodeDependencies';
+import { Dependency, DepNodeProvider, openDefinition } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
 //import { subscribeToDocumentChanges } from './diagnostics';
 import { getDefinitions } from './definitionsParsing';
@@ -26,6 +26,10 @@ export function activate(context: ExtensionContext) {
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
 		vscode.env.clipboard.writeText(node.full_name);
 		vscode.window.showInformationMessage(`Copied ${node.full_name} to clipboard.`);
+	});
+
+	vscode.commands.registerCommand('nodeDependencies.openDefinition', (node: Dependency) => {
+		openDefinition(suggestionsDictionary, node);
 	});
 
 	getDefinitions().then((res) => {

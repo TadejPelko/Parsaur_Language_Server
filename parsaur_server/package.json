@@ -81,6 +81,10 @@
 				"title": "Copy"
 			},
 			{
+				"command": "nodeDependencies.openDefinition",
+				"title": "Open Definition"
+			},
+			{
 				"command": "nodeDependencies.refreshEntry",
 				"title": "Search",
 				"icon": {
@@ -93,6 +97,10 @@
 			"view/item/context": [
 				{
 					"command": "nodeDependencies.copyEntry",
+					"when": "view == nodeDependencies && viewItem == dependency"
+				},
+				{
+					"command": "nodeDependencies.openDefinition",
 					"when": "view == nodeDependencies && viewItem == dependency"
 				}
 			],

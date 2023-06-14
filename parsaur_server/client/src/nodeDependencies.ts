@@ -102,6 +102,26 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 }
 
+export function openDefinition(suggestionsDictionary, searchDependency: Dependency){
+	for(const entry in suggestionsDictionary){
+		if(suggestionsDictionary[entry]["fullName"] == searchDependency.full_name){
+			vscode.workspace.openTextDocument(suggestionsDictionary[entry]["fileName"]).then(doc => 
+				{
+					vscode.window.showTextDocument(doc).then(editor => 
+					{
+						const pos = new vscode.Position(suggestionsDictionary[entry]["line"], suggestionsDictionary[entry]["character"]);
+						// Line added - by having a selection at the same position twice, the cursor jumps there
+						editor.selections = [new vscode.Selection(pos,pos)]; 
+				
+						// And the visible range jumps there too
+						const range = new vscode.Range(pos, pos);
+						editor.revealRange(range);
+					});
+				});
+		}
+	}
+}
+
  /**
    * Provides a class that holds a dependency.
    * 
