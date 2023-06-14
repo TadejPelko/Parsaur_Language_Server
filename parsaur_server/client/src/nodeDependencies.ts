@@ -22,6 +22,10 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		this.dependencyDictionary = parsedDefinitions;
 	}
 
+	public refreshDictionary(dictionary){
+		this.dependencyDictionary = dictionary;
+	}
+
 	public refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}

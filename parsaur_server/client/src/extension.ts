@@ -22,8 +22,15 @@ import {
 
 let client: LanguageClient;
 let suggestionsDictionary = {};
+const nodeDependenciesProvider = new DepNodeProvider({});
+
 
 export function activate(context: ExtensionContext) {
+	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
+	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
+
+	const termDiagnostic = vscode.languages.createDiagnosticCollection('test');
+	context.subscriptions.push(termDiagnostic);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
 		vscode.env.clipboard.writeText(node.full_name);
 		vscode.window.showInformationMessage(`Copied ${node.full_name} to clipboard.`);
@@ -35,13 +42,13 @@ export function activate(context: ExtensionContext) {
 
 	getDefinitions().then((res) => {
 		setNewDefinitions(res);
-		refreshDiagnostics(res);
+		refreshDiagnostics(res, termDiagnostic);
 	});
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		console.log("SAVED DOC", document);
 		getDefinitions().then((res) => {
 			setNewDefinitions(res);
-			refreshDiagnostics(res);
+			refreshDiagnostics(res, termDiagnostic);
 		});
 	});
 	context.subscriptions.push(
@@ -135,9 +142,7 @@ export function activate(context: ExtensionContext) {
 
 function setNewDefinitions(parsed){
 	suggestionsDictionary = parsed;
-	const nodeDependenciesProvider = new DepNodeProvider(parsed);
-	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
-	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
+	nodeDependenciesProvider.refreshDictionary(parsed)
 }
 
 function arraysEqual(a:any[], b:any[]) {
