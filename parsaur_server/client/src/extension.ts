@@ -7,6 +7,7 @@ import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider, openDefinition } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
+import { refreshDiagnostics } from './diagnostics';
 //import { subscribeToDocumentChanges } from './diagnostics';
 import { getDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
@@ -34,11 +35,13 @@ export function activate(context: ExtensionContext) {
 
 	getDefinitions().then((res) => {
 		setNewDefinitions(res);
+		refreshDiagnostics(res);
 	});
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		console.log("SAVED DOC", document);
 		getDefinitions().then((res) => {
 			setNewDefinitions(res);
+			refreshDiagnostics(res);
 		});
 	});
 	context.subscriptions.push(
