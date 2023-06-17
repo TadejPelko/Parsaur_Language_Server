@@ -7,6 +7,10 @@ const regularExpressions= [
 		name: "CREATE TAG "
 	},
 	{
+		regex: /CREATE\s+INT/g,
+		name: "CREATE INT "
+	},
+	{
 		regex: /CREATE\s+BASE/g,
 		name: "CREATE BASE "
 	},
@@ -96,7 +100,7 @@ export async function parseDefinitions(){
 								termIx = documentLines[lineIx].indexOf(searchTerm); // This is also hierarchy depth if we assume that characters before the search term are \t
 								if (termIx > -1){
 									const extractTerm = documentLines[lineIx].substring(termIx + searchTerm.length, documentLines[lineIx].length-1);
-									const split = extractTerm.split(" ");
+									const split = extractTerm.split(/\(| /);
 									extractedName = split[0];
 									while (extractedName.endsWith(';') || extractedName.endsWith('{') || extractedName.endsWith('\r'))
 										extractedName = extractedName.slice(0,-1);

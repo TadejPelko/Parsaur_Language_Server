@@ -73,6 +73,8 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			return Promise.resolve([
 						//new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
 						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", "", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("FILE_OBJECT", "FILE_OBJECT", "", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
 					]);
 		}
 	}

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 
-export async function refreshDiagnostics(suggestionsDictionary, collection: vscode.DiagnosticCollection){
+export async function refreshDiagnostics(suggestionsDictionary, collection: vscode.DiagnosticCollection) {
 	console.log("Beginning diagnostics");
 	collection.clear();
 	const diagnostics: vscode.Diagnostic[] = [];
@@ -12,6 +12,7 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 		split.shift(); // remove the unnecessary "c:"
 		await fs.promises.readFile(split.join("/")).then((res) => { 	//	This might be changed to parallel
 			const doc = res.toString();
+			res
 			if (doc){
 				const documentLines = doc?.split('\n');
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
@@ -28,7 +29,7 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 						if (!found){
 							const range = new vscode.Range(lineIx, ix, lineIx, ix + term.length);
 							diagnostics.push(
-								new vscode.Diagnostic(range, term, vscode.DiagnosticSeverity.Error)
+								new vscode.Diagnostic(range, uri + term, vscode.DiagnosticSeverity.Error)
 							);
 						}
 					}
@@ -48,7 +49,7 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
    * 
    * @returns The word of the character 
 */
-function getSequenceAt(str: string, pos: number) {
+function getSequenceAt(str: string, pos: number): string {
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;
