@@ -5,7 +5,6 @@ import * as fs from 'fs';
 export async function refreshDiagnostics(suggestionsDictionary, collection: vscode.DiagnosticCollection) {
 	console.log("Beginning diagnostics");
 	collection.clear();
-	const diagnostics: vscode.Diagnostic[] = [];
 	const uris = await vscode.workspace.findFiles('**/{*.mql}');
 	for (const uri of uris){
 		const split = uri.path.split('/');
@@ -14,6 +13,7 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 			const doc = res.toString();
 			res
 			if (doc){
+				const diagnostics: vscode.Diagnostic[] = [];
 				const documentLines = doc?.split('\n');
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
 					const ix = documentLines[lineIx].indexOf("?");
@@ -34,9 +34,9 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 						}
 					}
 				}
+				collection.set(uri,diagnostics);
 			}
 		});
-		collection.set(uri,diagnostics);
 	}
 	console.log("Finishing diagnostics");
 }
@@ -56,7 +56,7 @@ function getSequenceAt(str: string, pos: number): string {
 
     // Search for the word's beginning and end.
     const left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
-        right = str.slice(pos).search(/( |\(|\)|\t|\,|\;)+/);
+        right = str.slice(pos).search(/( |\(|\)|\t|\,|\;|\n|\r|\r\n)+/);
 
     // The last word in the string is a special case.
     if (right < 0) {

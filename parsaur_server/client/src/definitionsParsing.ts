@@ -102,7 +102,7 @@ export async function parseDefinitions(){
 									const extractTerm = documentLines[lineIx].substring(termIx + searchTerm.length, documentLines[lineIx].length-1);
 									const split = extractTerm.split(/\(| /);
 									extractedName = split[0];
-									while (extractedName.endsWith(';') || extractedName.endsWith('{') || extractedName.endsWith('\r'))
+									while (extractedName.endsWith(';') || extractedName.endsWith('{') || extractedName.endsWith('\r') || extractedName.endsWith('\t') || extractedName.endsWith('\n'))
 										extractedName = extractedName.slice(0,-1);
 									break;
 								} 			
