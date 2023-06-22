@@ -139,7 +139,7 @@ export async function parseDefinitions(){
 							}
 							const topLevel = context.length == 0;
 							const definitionKey = constructDictionaryKey(context, extractedName, uri);
-							definitionsDictionary[definitionKey] = new DefinitionEntry(
+							const newEntry = new DefinitionEntry(
 								extractedName,
 								context.join("."),
 								topLevel,
@@ -150,10 +150,11 @@ export async function parseDefinitions(){
 								lineIx,
 								termIx
 							);
+							definitionsDictionary[definitionKey] = newEntry;
 							// add children
 							if (dictionaryKeyContext.length > 0){
 								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]].children.push(extractedName);
-								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]].childrenKeys.push(definitionKey);
+								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]].childrenEntries.push(newEntry);
 							}
 							if (!special){
 								context.push(extractedName);
@@ -183,8 +184,8 @@ export function postProcessingDefinitions(definitionsDictionary: {[key: string]:
 			for (const keyNameImport in definitionsDictionary){
 				if (definitionsDictionary[keyNameImport].fileName == importName && definitionsDictionary[keyNameImport].isTopLevel){
 					definitionsDictionary[keyName].children.push(definitionsDictionary[keyNameImport].name);
-					definitionsDictionary[keyName].childrenKeys.push(keyNameImport);
-					recursivelyAddContext(definitionsDictionary, keyNameImport, keyName);
+					definitionsDictionary[keyName].childrenEntries.push(definitionsDictionary[keyNameImport]);
+					recursivelyAddContext(definitionsDictionary, definitionsDictionary[keyNameImport], keyName);
 				}
 			}
 		}
@@ -204,22 +205,22 @@ export function postProcessingDefinitions(definitionsDictionary: {[key: string]:
    * Adds context to definitions using recursion. 
    * 
    * @param definitionsDictionary - Definitions dictionary
-   * @param keyNameImport - Dictionary key of the imported definition 
+   * @param importEntry - Imported definition entry
    * @param keyName Dictionary key of importing definition
    * 
    * @returns Definitions dictionary.
    */
-export function recursivelyAddContext(definitionsDictionary: {[key: string]: DefinitionEntry}, keyNameImport: string, keyName: string){
-	if (definitionsDictionary[keyNameImport].context != '' && definitionsDictionary[keyName].context != '')
-	definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name + "." + definitionsDictionary[keyNameImport].context;
-	else if (definitionsDictionary[keyNameImport].context == '' && definitionsDictionary[keyName].context != '')
-		definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name;
-	else if (definitionsDictionary[keyNameImport].context != '' && definitionsDictionary[keyName].context == '')
-		definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].name  + "." + definitionsDictionary[keyNameImport].context;
+export function recursivelyAddContext(definitionsDictionary: {[key: string]: DefinitionEntry}, importEntry: DefinitionEntry, keyName: string){
+	if (importEntry.context != '' && definitionsDictionary[keyName].context != '')
+		importEntry.context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name + "." + importEntry.context;
+	else if (importEntry.context == '' && definitionsDictionary[keyName].context != '')
+		importEntry.context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name;
+	else if (importEntry.context != '' && definitionsDictionary[keyName].context == '')
+		importEntry.context = definitionsDictionary[keyName].name  + "." + importEntry.context;
 	else // if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] == '')
-		definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].name;
+		importEntry.context = definitionsDictionary[keyName].name;
 
-	for (const child of definitionsDictionary[keyNameImport].childrenKeys)
+	for (const child of importEntry.childrenEntries)
 		definitionsDictionary = recursivelyAddContext(definitionsDictionary, child, keyName);
 	return definitionsDictionary;
 }
@@ -257,7 +258,7 @@ export class DefinitionEntry {
 		public isTopLevel: boolean,
 		public fileName: string,
 		public children: string[],
-		public childrenKeys: string[],
+		public childrenEntries: DefinitionEntry[],
 		public imports: string[],
 		public line: number,
 		public character: number,

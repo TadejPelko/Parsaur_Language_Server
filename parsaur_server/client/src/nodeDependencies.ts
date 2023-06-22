@@ -46,11 +46,11 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		const returnResult: Dependency[] = [];
 		for (const entry in this.dependencyDictionary){
 			if (this.dependencyDictionary[entry].fullName == item){
-				for(const child of this.dependencyDictionary[entry].childrenKeys){
-					if (this.dependencyDictionary[child].children.length > 0)
-						returnResult.push(new Dependency(this.dependencyDictionary[child].name, this.dependencyDictionary[child].fullName, vscode.TreeItemCollapsibleState.Collapsed, []));
+				for(const child of this.dependencyDictionary[entry].childrenEntries){
+					if (child.children.length > 0)
+						returnResult.push(new Dependency(child.name, child.fullName, vscode.TreeItemCollapsibleState.Collapsed, []));
 					else
-						returnResult.push(new Dependency(this.dependencyDictionary[child].name, this.dependencyDictionary[child].fullName, vscode.TreeItemCollapsibleState.None, []));
+						returnResult.push(new Dependency(child.name, child.fullName, vscode.TreeItemCollapsibleState.None, []));
 				}
 			}
 		}
@@ -69,7 +69,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    */
 	public getChildren(element?: Dependency): Thenable<Dependency[]> {
 		if (element){
-			return this.readItemFromEdgelistPromise(element.full_name);
+			return this.readItemFromEdgelistPromise(element.fullName);
 		}else{
 			return Promise.resolve([
 						//new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
@@ -116,10 +116,10 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    * @param suggestionsDictionary - Definitions dictionary
    * @param searchDependency - Dependency class of the searched defi
    */
-export function openDefinition(suggestionsDictionary, searchDependency: Dependency){
+export function openDefinition(suggestionsDictionary: {[key: string]: DefinitionEntry}, searchDependency: Dependency){
 	for(const entry in suggestionsDictionary){
-		if(suggestionsDictionary[entry].fullName == searchDependency.full_name){
-			vscode.workspace.openTextDocument(suggestionsDictionary[entry].fullName).then(doc => 
+		if(suggestionsDictionary[entry].fullName == searchDependency.fullName){
+			vscode.workspace.openTextDocument(suggestionsDictionary[entry].fileName).then(doc => 
 				{
 					vscode.window.showTextDocument(doc).then(editor => 
 					{
@@ -146,13 +146,13 @@ export class Dependency extends vscode.TreeItem {
 
 	constructor(
 		public readonly label: string,
-		public readonly full_name: string,
+		public readonly fullName: string,
 		public collapsibleState: vscode.TreeItemCollapsibleState,
 		public children: Dependency[]
 	) {
 		super(label, collapsibleState);
 
-		this.tooltip = `${this.full_name}`;
+		this.tooltip = `${this.fullName}`;
 	}
 
 	contextValue = 'dependency';
