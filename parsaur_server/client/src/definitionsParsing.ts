@@ -41,7 +41,7 @@ export async function getDefinitions(){
    * 
    * @returns Dictionary key for the definitions.
    */
-export function constructDictionaryKey(context, extractedName, uri){
+export function constructDictionaryKey(context, extractedName: string, uri: vscode.Uri){
 	let definitionKey = context.join(".") + "." + extractedName + "_" + uri;
 	if (context.length == 0)
 		definitionKey = definitionKey.substring(1, definitionKey.length -1);
@@ -56,7 +56,7 @@ export function constructDictionaryKey(context, extractedName, uri){
    */
 export async function parseDefinitions(){
 	console.log("Beginning parsing");
-	const definitionsDictionary = {};
+	const definitionsDictionary: {[key: string]: DefinitionEntry} = {};
 	const uris = await vscode.workspace.findFiles('**/{*.mql}');
 	for (const uri of uris){
 		const split = uri.path.split('/');
@@ -93,7 +93,7 @@ export async function parseDefinitions(){
 								replaced = replaced.slice(0,-1);
 
 							const fullPath = splitUri.join('/') + "/" + replaced;
-							definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]]["imports"].push(fullPath);
+							definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]].imports.push(fullPath);
 						}
 					} else {
 						// Special children using "?"
@@ -139,21 +139,21 @@ export async function parseDefinitions(){
 							}
 							const topLevel = context.length == 0;
 							const definitionKey = constructDictionaryKey(context, extractedName, uri);
-							definitionsDictionary[definitionKey] = {
-								name: extractedName,
-								context: context.join("."),
-								isTopLevel: topLevel,
-								fileName: uri.path,
-								children: [],
-								childrenKeys: [],
-								imports: [],
-								line: lineIx,
-								character: termIx
-							};
+							definitionsDictionary[definitionKey] = new DefinitionEntry(
+								extractedName,
+								context.join("."),
+								topLevel,
+								uri.path,
+								[],
+								[],
+								[],
+								lineIx,
+								termIx
+							);
 							// add children
 							if (dictionaryKeyContext.length > 0){
-								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]]["children"].push(extractedName);
-								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]]["childrenKeys"].push(definitionKey);
+								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]].children.push(extractedName);
+								definitionsDictionary[dictionaryKeyContext[dictionaryKeyContext.length - 1]].childrenKeys.push(definitionKey);
 							}
 							if (!special){
 								context.push(extractedName);
@@ -176,14 +176,14 @@ export async function parseDefinitions(){
    * 
    * @returns Corrected (processed) definitions dictionary.
    */
-export function postProcessingDefinitions(definitionsDictionary){ //Replaces imports with children - top level definitions of imported file
+export function postProcessingDefinitions(definitionsDictionary: {[key: string]: DefinitionEntry}){ //Replaces imports with children - top level definitions of imported file
 	console.log("Beginning post-parsing procedure");
 	for (const keyName in definitionsDictionary){
-		for (const importName of definitionsDictionary[keyName]['imports']){
+		for (const importName of definitionsDictionary[keyName].imports){
 			for (const keyNameImport in definitionsDictionary){
-				if (definitionsDictionary[keyNameImport]['fileName'] == importName && definitionsDictionary[keyNameImport]['isTopLevel']){
-					definitionsDictionary[keyName]['children'].push(definitionsDictionary[keyNameImport]['name']);
-					definitionsDictionary[keyName]['childrenKeys'].push(keyNameImport);
+				if (definitionsDictionary[keyNameImport].fileName == importName && definitionsDictionary[keyNameImport].isTopLevel){
+					definitionsDictionary[keyName].children.push(definitionsDictionary[keyNameImport].name);
+					definitionsDictionary[keyName].childrenKeys.push(keyNameImport);
 					recursivelyAddContext(definitionsDictionary, keyNameImport, keyName);
 				}
 			}
@@ -191,10 +191,10 @@ export function postProcessingDefinitions(definitionsDictionary){ //Replaces imp
 	}
 
 	for (const keyName in definitionsDictionary){
-		if (definitionsDictionary[keyName]['context'] != '')
-			definitionsDictionary[keyName]['fullName'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']; 
+		if (definitionsDictionary[keyName].context != '')
+			definitionsDictionary[keyName].fullName = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name; 
 		else
-			definitionsDictionary[keyName]['fullName'] = definitionsDictionary[keyName]['name']; 
+			definitionsDictionary[keyName].fullName = definitionsDictionary[keyName].name; 
 	}
 	console.log("Finished post-parsing procedure");
 	return definitionsDictionary;
@@ -209,17 +209,17 @@ export function postProcessingDefinitions(definitionsDictionary){ //Replaces imp
    * 
    * @returns Definitions dictionary.
    */
-export function recursivelyAddContext(definitionsDictionary, keyNameImport, keyName){
-	if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] != '')
-	definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
-	else if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] != '')
-		definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name'];
-	else if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] == '')
-		definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];
+export function recursivelyAddContext(definitionsDictionary: {[key: string]: DefinitionEntry}, keyNameImport: string, keyName: string){
+	if (definitionsDictionary[keyNameImport].context != '' && definitionsDictionary[keyName].context != '')
+	definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name + "." + definitionsDictionary[keyNameImport].context;
+	else if (definitionsDictionary[keyNameImport].context == '' && definitionsDictionary[keyName].context != '')
+		definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name;
+	else if (definitionsDictionary[keyNameImport].context != '' && definitionsDictionary[keyName].context == '')
+		definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].name  + "." + definitionsDictionary[keyNameImport].context;
 	else // if (definitionsDictionary[keyNameImport]['context'] == '' && definitionsDictionary[keyName]['context'] == '')
-		definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['name'];
+		definitionsDictionary[keyNameImport].context = definitionsDictionary[keyName].name;
 
-	for (const child of definitionsDictionary[keyNameImport]['childrenKeys'])
+	for (const child of definitionsDictionary[keyNameImport].childrenKeys)
 		definitionsDictionary = recursivelyAddContext(definitionsDictionary, child, keyName);
 	return definitionsDictionary;
 }
@@ -248,4 +248,19 @@ function getSequenceAt(str: string, pos: number) {
 
     // Return the word, using the located bounds to extract it from the string.
     return str.slice(left, right + pos);
+}
+
+export class DefinitionEntry {
+	constructor(
+		public name: string,
+		public context: string,
+		public isTopLevel: boolean,
+		public fileName: string,
+		public children: string[],
+		public childrenKeys: string[],
+		public imports: string[],
+		public line: number,
+		public character: number,
+		public fullName = ""
+	){}
 }

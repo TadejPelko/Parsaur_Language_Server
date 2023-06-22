@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { DefinitionEntry } from './definitionsParsing';
 
 /**
  * Contains funtions for hierarchical definitions search. 
@@ -7,7 +8,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Dependency | undefined | void> = new vscode.EventEmitter<Dependency | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Dependency | undefined | void> = this._onDidChangeTreeData.event;
-	private dependencyDictionary = {};
+	private dependencyDictionary: {[key: string]: DefinitionEntry} = {};
 
 
   /**
@@ -44,12 +45,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	private readItemFromEdgelistPromise(item: string): Thenable<Dependency[]>{
 		const returnResult: Dependency[] = [];
 		for (const entry in this.dependencyDictionary){
-			if (this.dependencyDictionary[entry]["fullName"] == item){
-				for(const child of this.dependencyDictionary[entry]["childrenKeys"]){
-					if (this.dependencyDictionary[child]["children"].length > 0)
-						returnResult.push(new Dependency(this.dependencyDictionary[child]["name"], this.dependencyDictionary[child]["fullName"], vscode.TreeItemCollapsibleState.Collapsed, []));
+			if (this.dependencyDictionary[entry].fullName == item){
+				for(const child of this.dependencyDictionary[entry].childrenKeys){
+					if (this.dependencyDictionary[child].children.length > 0)
+						returnResult.push(new Dependency(this.dependencyDictionary[child].name, this.dependencyDictionary[child].fullName, vscode.TreeItemCollapsibleState.Collapsed, []));
 					else
-						returnResult.push(new Dependency(this.dependencyDictionary[child]["name"], this.dependencyDictionary[child]["fullName"], vscode.TreeItemCollapsibleState.None, []));
+						returnResult.push(new Dependency(this.dependencyDictionary[child].name, this.dependencyDictionary[child].fullName, vscode.TreeItemCollapsibleState.None, []));
 				}
 			}
 		}
@@ -90,17 +91,17 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		const input_term = await searchInput;
 		const inputTermUpperCase = input_term.toUpperCase();
 		for (const entry in this.dependencyDictionary){
-			if (inputTermUpperCase == this.dependencyDictionary[entry]["name"]){
-				vscode.env.clipboard.writeText(this.dependencyDictionary[entry]["fullName"]);
-				vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[entry]["fullName"]} to clipboard.`);
+			if (inputTermUpperCase == this.dependencyDictionary[entry].name){
+				vscode.env.clipboard.writeText(this.dependencyDictionary[entry].fullName);
+				vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[entry].fullName} to clipboard.`);
 				return;
 			}
 		}
 		// Round 2 of search
 		for (const entry in this.dependencyDictionary){
-			if (this.dependencyDictionary[entry]["fullName"].indexOf(inputTermUpperCase) > -1){
-				vscode.env.clipboard.writeText(this.dependencyDictionary[entry]["fullName"]);
-				vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[entry]["fullName"]} to clipboard.`);
+			if (this.dependencyDictionary[entry].fullName.indexOf(inputTermUpperCase) > -1){
+				vscode.env.clipboard.writeText(this.dependencyDictionary[entry].fullName);
+				vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[entry].fullName} to clipboard.`);
 				return;
 			}
 		}
@@ -117,12 +118,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    */
 export function openDefinition(suggestionsDictionary, searchDependency: Dependency){
 	for(const entry in suggestionsDictionary){
-		if(suggestionsDictionary[entry]["fullName"] == searchDependency.full_name){
-			vscode.workspace.openTextDocument(suggestionsDictionary[entry]["fileName"]).then(doc => 
+		if(suggestionsDictionary[entry].fullName == searchDependency.full_name){
+			vscode.workspace.openTextDocument(suggestionsDictionary[entry].fullName).then(doc => 
 				{
 					vscode.window.showTextDocument(doc).then(editor => 
 					{
-						const pos = new vscode.Position(suggestionsDictionary[entry]["line"], suggestionsDictionary[entry]["character"]);
+						const pos = new vscode.Position(suggestionsDictionary[entry].line, suggestionsDictionary[entry].character);
 						// Line added - by having a selection at the same position twice, the cursor jumps there
 						editor.selections = [new vscode.Selection(pos,pos)]; 
 				

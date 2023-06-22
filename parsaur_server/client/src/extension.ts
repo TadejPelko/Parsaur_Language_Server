@@ -9,7 +9,7 @@ import { Dependency, DepNodeProvider, openDefinition } from './nodeDependencies'
 import { AutoFix } from './AutoFix';
 import { refreshDiagnostics } from './diagnostics';
 //import { subscribeToDocumentChanges } from './diagnostics';
-import { getDefinitions } from './definitionsParsing';
+import { DefinitionEntry, getDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
 
 
@@ -21,7 +21,7 @@ import {
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
-let suggestionsDictionary = {};
+let suggestionsDictionary: {[key: string]: DefinitionEntry} = {};
 const nodeDependenciesProvider = new DepNodeProvider({});
 
 
@@ -32,8 +32,8 @@ export function activate(context: ExtensionContext) {
 	const termDiagnostic = vscode.languages.createDiagnosticCollection('test');
 	context.subscriptions.push(termDiagnostic);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
-		vscode.env.clipboard.writeText(node.full_name);
-		vscode.window.showInformationMessage(`Copied ${node.full_name} to clipboard.`);
+		vscode.env.clipboard.writeText(node.fullName);
+		vscode.window.showInformationMessage(`Copied ${node.fullName} to clipboard.`);
 	});
 
 	vscode.commands.registerCommand('nodeDependencies.openDefinition', (node: Dependency) => {
@@ -86,9 +86,9 @@ export function activate(context: ExtensionContext) {
 				const hoverLine = document.lineAt(position.line).text;
 				const sequence = getSequenceAt(hoverLine, position.character); // word for definition search
 				for (const keyName in suggestionsDictionary){
-					if (suggestionsDictionary[keyName]['fullName'] == sequence){
-						const position = new vscode.Position(suggestionsDictionary[keyName]['line'], suggestionsDictionary[keyName]['character']);
-						const file = vscode.Uri.file(suggestionsDictionary[keyName]['fileName']);
+					if (suggestionsDictionary[keyName].fullName == sequence){
+						const position = new vscode.Position(suggestionsDictionary[keyName].line, suggestionsDictionary[keyName].character);
+						const file = vscode.Uri.file(suggestionsDictionary[keyName].fileName);
 						return new vscode.Location(file, position);
 					}
 				}
@@ -159,8 +159,8 @@ function arraysEqual(a:any[], b:any[]) {
 /**
    * Suggests relevant code completions.
    * 
-   * @param line - relevant line in document
-   * @param word - the word for which we want InteliSense
+   * @param line - Relevant line in document
+   * @param word - The word for which we want InteliSense
    * 
    * @returns code suggestion {@link CompletionList}
 */
@@ -171,22 +171,22 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 	if (dotHierarchy.length < 1)
 		return;
 	for (const keyName in suggestionsDictionary){
-		if (arraysEqual(dotHierarchy, suggestionsDictionary[keyName]['fullName'].split('.')))
-			return suggestionsDictionary[keyName]['children'];
-		const contextCopy = suggestionsDictionary[keyName]['fullName'].split('.');
+		if (arraysEqual(dotHierarchy, suggestionsDictionary[keyName].fullName.split('.')))
+			return suggestionsDictionary[keyName].children;
+		const contextCopy = suggestionsDictionary[keyName].fullName.split('.');
 		contextCopy[0] = "?"+contextCopy[0];
 		if (arraysEqual(dotHierarchy, contextCopy)) // if we use inheritance
-			return suggestionsDictionary[keyName]['children'];
+			return suggestionsDictionary[keyName].children;
 	}
 }
 
 /**
    * Suggests relevant code completions.
    * 
-   * @param document - open documents in workspace
-   * @param position - position of the character for which we are looking the code completion
+   * @param document - Open documents in workspace
+   * @param position - Position of the character for which we are looking the code completion
    * 
-   * @returns the completion handler
+   * @returns The completion handler
 */
 export function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
 	// The pass parameter contains the position of the text document in
@@ -210,8 +210,8 @@ export function getCodeCompletions(document: vscode.TextDocument, position: vsco
 /**
    * Extracts the word of the character. 
    * 
-   * @param str - string in which the word we want to extract is found
-   * @param pos - position of the character within the string, of which we want to extract the sequence
+   * @param str - String in which the word we want to extract is found
+   * @param pos - Position of the character within the string, of which we want to extract the sequence
    * 
    * @returns The word of the character 
 */
