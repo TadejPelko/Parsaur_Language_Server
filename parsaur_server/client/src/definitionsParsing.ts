@@ -22,11 +22,25 @@ const regularExpressions= [
 const IMPORT_STATEMENT = "IMPORT";
 const TAB_TO_SPACE_CONVERSION = 4;
 
+ /**
+   * Creates a dictionary of definitions. 
+   * 
+   * @returns Dictionary of definitions
+   */
 export async function getDefinitions(){
 	const res = await parseDefinitions();
 	return postProcessingDefinitions(res);
 }
 
+ /**
+   * Creates a code action quick fix. 
+   * 
+   * @param context - Array of parent definitions
+   * @param extractedName - Name of the definiton
+   * @param uri - Uri of the file where the definition was found
+   * 
+   * @returns Dictionary key for the definitions.
+   */
 export function constructDictionaryKey(context, extractedName, uri){
 	let definitionKey = context.join(".") + "." + extractedName + "_" + uri;
 	if (context.length == 0)
@@ -34,6 +48,12 @@ export function constructDictionaryKey(context, extractedName, uri){
 	return definitionKey;
 }
 
+
+ /**
+   * Iterates over local .mql files and parses definitons. 
+   * 
+   * @returns Definitions dictionary.
+   */
 export async function parseDefinitions(){
 	console.log("Beginning parsing");
 	const definitionsDictionary = {};
@@ -149,6 +169,13 @@ export async function parseDefinitions(){
 	return definitionsDictionary;
 }
 
+ /**
+   * Processes the parsed definitions, handling imports. 
+   * 
+   * @param definitionsDictionary - Definitions dictionary
+   * 
+   * @returns Corrected (processed) definitions dictionary.
+   */
 export function postProcessingDefinitions(definitionsDictionary){ //Replaces imports with children - top level definitions of imported file
 	console.log("Beginning post-parsing procedure");
 	for (const keyName in definitionsDictionary){
@@ -170,10 +197,18 @@ export function postProcessingDefinitions(definitionsDictionary){ //Replaces imp
 			definitionsDictionary[keyName]['fullName'] = definitionsDictionary[keyName]['name']; 
 	}
 	console.log("Finished post-parsing procedure");
-	console.log(definitionsDictionary);
 	return definitionsDictionary;
 }
 
+ /**
+   * Adds context to definitions using recursion. 
+   * 
+   * @param definitionsDictionary - Definitions dictionary
+   * @param keyNameImport - Dictionary key of the imported definition 
+   * @param keyName Dictionary key of importing definition
+   * 
+   * @returns Definitions dictionary.
+   */
 export function recursivelyAddContext(definitionsDictionary, keyNameImport, keyName){
 	if (definitionsDictionary[keyNameImport]['context'] != '' && definitionsDictionary[keyName]['context'] != '')
 	definitionsDictionary[keyNameImport]['context'] = definitionsDictionary[keyName]['context'] + "." + definitionsDictionary[keyName]['name']  + "." + definitionsDictionary[keyNameImport]['context'];

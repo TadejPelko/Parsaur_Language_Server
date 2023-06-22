@@ -160,6 +160,7 @@ function arraysEqual(a:any[], b:any[]) {
    * Suggests relevant code completions.
    * 
    * @param line - relevant line in document
+   * @param word - the word for which we want InteliSense
    * 
    * @returns code suggestion {@link CompletionList}
 */
@@ -183,6 +184,7 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
    * Suggests relevant code completions.
    * 
    * @param document - open documents in workspace
+   * @param position - position of the character for which we are looking the code completion
    * 
    * @returns the completion handler
 */
@@ -209,7 +211,7 @@ export function getCodeCompletions(document: vscode.TextDocument, position: vsco
    * Extracts the word of the character. 
    * 
    * @param str - string in which the word we want to extract is found
-   * @param position - position of the character within the string
+   * @param pos - position of the character within the string, of which we want to extract the sequence
    * 
    * @returns The word of the character 
 */

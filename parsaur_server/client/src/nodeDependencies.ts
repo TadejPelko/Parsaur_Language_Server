@@ -47,9 +47,9 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			if (this.dependencyDictionary[entry]["fullName"] == item){
 				for(const child of this.dependencyDictionary[entry]["childrenKeys"]){
 					if (this.dependencyDictionary[child]["children"].length > 0)
-						returnResult.push(new Dependency(this.dependencyDictionary[child]["name"], this.dependencyDictionary[child]["fullName"], "", vscode.TreeItemCollapsibleState.Collapsed, []));
+						returnResult.push(new Dependency(this.dependencyDictionary[child]["name"], this.dependencyDictionary[child]["fullName"], vscode.TreeItemCollapsibleState.Collapsed, []));
 					else
-						returnResult.push(new Dependency(this.dependencyDictionary[child]["name"], this.dependencyDictionary[child]["fullName"], "", vscode.TreeItemCollapsibleState.None, []));
+						returnResult.push(new Dependency(this.dependencyDictionary[child]["name"], this.dependencyDictionary[child]["fullName"], vscode.TreeItemCollapsibleState.None, []));
 				}
 			}
 		}
@@ -72,9 +72,9 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		}else{
 			return Promise.resolve([
 						//new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
-						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", "", vscode.TreeItemCollapsibleState.Collapsed, []),
-						new Dependency("FILE_OBJECT", "FILE_OBJECT", "", vscode.TreeItemCollapsibleState.Collapsed, []),
-						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("FILE_OBJECT", "FILE_OBJECT", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", vscode.TreeItemCollapsibleState.Collapsed, []),
 					]);
 		}
 	}
@@ -108,6 +108,13 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 }
 
+
+ /**
+   * Opens the file containing the definition at its location. 
+   * 
+   * @param suggestionsDictionary - Definitions dictionary
+   * @param searchDependency - Dependency class of the searched defi
+   */
 export function openDefinition(suggestionsDictionary, searchDependency: Dependency){
 	for(const entry in suggestionsDictionary){
 		if(suggestionsDictionary[entry]["fullName"] == searchDependency.full_name){
@@ -139,7 +146,6 @@ export class Dependency extends vscode.TreeItem {
 	constructor(
 		public readonly label: string,
 		public readonly full_name: string,
-		private readonly type: string,
 		public collapsibleState: vscode.TreeItemCollapsibleState,
 		public children: Dependency[]
 	) {
