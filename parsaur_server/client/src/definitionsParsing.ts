@@ -128,7 +128,7 @@ export async function parseDefinitions(){
 								} 			
 							}	// searching regular expressions	
 						}
-						if (termIx > -1){	
+						if (termIx > -1){
 							const contextLength = context.length;
 							let whiteCharacters = TAB_TO_SPACE_CONVERSION; // 4 spaces equal to one \t
 							if (documentLines[lineIx].startsWith('\t'))

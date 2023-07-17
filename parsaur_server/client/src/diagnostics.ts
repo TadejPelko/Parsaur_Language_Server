@@ -29,7 +29,7 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 						if (!found){
 							const range = new vscode.Range(lineIx, ix, lineIx, ix + term.length);
 							diagnostics.push(
-								new vscode.Diagnostic(range, uri + term, vscode.DiagnosticSeverity.Error)
+								new vscode.Diagnostic(range, "Term: " + term + " is invalid!", vscode.DiagnosticSeverity.Error)
 							);
 						}
 					}
