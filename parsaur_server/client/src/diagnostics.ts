@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 
+const SINGLE_LINE_COMMENT_CHARACTER = "//";
+const MULTI_LINE_COMMENT_CHARACTER_OPEN = "/*";
+const MULTI_LINE_COMMENT_CHARACTER_CLOSE = "*/";
 
 export async function refreshDiagnostics(suggestionsDictionary, collection: vscode.DiagnosticCollection) {
 	console.log("Beginning diagnostics");
@@ -15,10 +18,30 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 			if (doc){
 				const diagnostics: vscode.Diagnostic[] = [];
 				const documentLines = doc?.split('\n');
+				let ignoreLineDueToComment = false;
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
-					const ix = documentLines[lineIx].indexOf("?");
+					let currentLine = documentLines[lineIx];
+					// Check for comment characters
+					if (ignoreLineDueToComment){
+						const multi_line_comment_close_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_CLOSE);
+						if (multi_line_comment_close_char_ix > -1){ //line contains the end of multi-line comment
+							currentLine = currentLine.substring(multi_line_comment_close_char_ix, currentLine.length);
+							ignoreLineDueToComment = false;
+						}else
+							continue; // line is commented
+					}
+					const multi_line_comment_open_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_OPEN);
+					if (multi_line_comment_open_char_ix > -1){
+						currentLine = currentLine.substring(0, multi_line_comment_open_char_ix);
+						ignoreLineDueToComment = true;
+					}
+					const single_line_comment_char_ix = currentLine.indexOf(SINGLE_LINE_COMMENT_CHARACTER);
+					if (single_line_comment_char_ix > -1){
+						currentLine = currentLine.substring(0, single_line_comment_char_ix);
+					}
+					const ix = currentLine.indexOf("?"); //Hierarchy terms always start with '?'
 					if (ix > -1){
-						const term = getSequenceAt(documentLines[lineIx], ix + 1);
+						const term = getSequenceAt(currentLine, ix + 1);
 						let found = false;
 						for (const entry in suggestionsDictionary){
 							if (suggestionsDictionary[entry]["fullName"] == term){

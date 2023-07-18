@@ -20,6 +20,9 @@ const regularExpressions= [
 	}
 ];
 const IMPORT_STATEMENT = "IMPORT";
+const SINGLE_LINE_COMMENT_CHARACTER = "//";
+const MULTI_LINE_COMMENT_CHARACTER_OPEN = "/*";
+const MULTI_LINE_COMMENT_CHARACTER_CLOSE = "*/";
 const TAB_TO_SPACE_CONVERSION = 4;
 
  /**
@@ -65,20 +68,42 @@ export async function parseDefinitions(){
 			const doc = res.toString();
 			const context = [];
 			const dictionaryKeyContext = [];
+			let ignoreLineDueToComment = false;
 			if (doc){
 				const documentLines = doc?.split('\n');
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
-					const importIx = documentLines[lineIx].indexOf(IMPORT_STATEMENT);
+					let currentLine = documentLines[lineIx];
+
+					// Check for comment characters
+					if (ignoreLineDueToComment){
+						const multi_line_comment_close_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_CLOSE);
+						if (multi_line_comment_close_char_ix > -1){ //line contains the end of multi-line comment
+							currentLine = currentLine.substring(multi_line_comment_close_char_ix, currentLine.length);
+							ignoreLineDueToComment = false;
+						}else
+							continue; // line is commented
+					}
+					const multi_line_comment_open_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_OPEN);
+					if (multi_line_comment_open_char_ix > -1){
+						currentLine = currentLine.substring(0, multi_line_comment_open_char_ix);
+						ignoreLineDueToComment = true;
+					}
+					const single_line_comment_char_ix = currentLine.indexOf(SINGLE_LINE_COMMENT_CHARACTER);
+					if (single_line_comment_char_ix > -1){
+						currentLine = currentLine.substring(0, single_line_comment_char_ix);
+					}
+
+					const importIx = currentLine.indexOf(IMPORT_STATEMENT);
 					if (importIx > -1){
 						const contextLength = context.length; 
 						let whiteCharacters = TAB_TO_SPACE_CONVERSION; // 4 spaces equal to one \t
-						if (documentLines[lineIx].startsWith('\t'))
+						if (currentLine.startsWith('\t'))
 							whiteCharacters = 1;
 						for (let i = 0; i < contextLength - importIx / whiteCharacters; i++){ // update hierarchy depth based on number of used \t -> ONE \T IS 4 CHARACTERS
 							context.pop();
 							dictionaryKeyContext.pop();
 						}
-						const spaceSplit = documentLines[lineIx].split(' ');
+						const spaceSplit = currentLine.split(' ');
 						while (spaceSplit[spaceSplit.length - 1] === '')
 							spaceSplit.pop(); //remove unnecesarry spaces
 						let importTerm = spaceSplit[spaceSplit.length - 1];
@@ -97,13 +122,13 @@ export async function parseDefinitions(){
 						}
 					} else {
 						// Special children using "?"
-						const trimmedLine = documentLines[lineIx].trim();
+						const trimmedLine = currentLine.trim();
 						let extractedName = "";
 						let termIx = -1;
 						let special = false;
 						if (trimmedLine.startsWith("?")){
 							special = true;
-							termIx = documentLines[lineIx].indexOf("?");
+							termIx = currentLine.indexOf("?");
 							if (trimmedLine.indexOf(" AS ") > -1){
 								const splittedByAs = trimmedLine.split(" AS "); // I assume there is only one "AS"
 								const asTerm = splittedByAs[splittedByAs.length - 1]; // split by { and ' '
@@ -117,9 +142,9 @@ export async function parseDefinitions(){
 							// Regular expressions search for children
 							for (const expression of regularExpressions){
 								const searchTerm = expression.name;
-								termIx = documentLines[lineIx].indexOf(searchTerm); // This is also hierarchy depth if we assume that characters before the search term are \t
+								termIx = currentLine.indexOf(searchTerm); // This is also hierarchy depth if we assume that characters before the search term are \t
 								if (termIx > -1){
-									const extractTerm = documentLines[lineIx].substring(termIx + searchTerm.length, documentLines[lineIx].length-1);
+									const extractTerm = currentLine.substring(termIx + searchTerm.length, currentLine.length-1);
 									const split = extractTerm.split(/\(| /);
 									extractedName = split[0];
 									while (extractedName.endsWith(';') || extractedName.endsWith('{') || extractedName.endsWith('\r') || extractedName.endsWith('\t') || extractedName.endsWith('\n'))
@@ -131,7 +156,7 @@ export async function parseDefinitions(){
 						if (termIx > -1){
 							const contextLength = context.length;
 							let whiteCharacters = TAB_TO_SPACE_CONVERSION; // 4 spaces equal to one \t
-							if (documentLines[lineIx].startsWith('\t'))
+							if (currentLine.startsWith('\t'))
 								whiteCharacters = 1;
 							for (let i = 0; i < contextLength - termIx / whiteCharacters; i++){ // update hierarchy depth based on number of used \t -> ONE \T IS 4 CHARACTERS
 								context.pop();
