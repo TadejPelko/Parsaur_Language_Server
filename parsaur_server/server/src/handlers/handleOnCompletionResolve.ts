@@ -126,6 +126,9 @@ export function getCompletionResolveHandler(){
 		}else if (item.data === 40) {
 			item.detail = 'PROPERTY details';
 			item.documentation = 'docs';
+		}else if (item.data === 41) {
+			item.detail = 'LINK_GROUP details';
+			item.documentation = 'docs';
 		}
 		return item;
 	};

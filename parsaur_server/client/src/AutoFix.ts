@@ -192,6 +192,7 @@ export class AutoFix implements vscode.CodeActionProvider {
 		"PYLINK",
 		"GRID",
 		"DisplayItem",
-		"PROPERTY"
+		"PROPERTY",
+		"LINK_GROUP"
 	];
 }

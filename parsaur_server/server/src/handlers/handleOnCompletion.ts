@@ -411,6 +411,11 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 					label: 'PROPERTY',
 					kind: CompletionItemKind.Text,
 					data: 40
+				},
+				{
+					label: 'LINK_GROUP',
+					kind: CompletionItemKind.Text,
+					data: 41
 				}
 			]);
 		return returnArray;
