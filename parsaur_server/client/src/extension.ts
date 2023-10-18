@@ -206,8 +206,8 @@ export function getCodeCompletions(document: vscode.TextDocument, position: vsco
 	const hoverLine = lines[line].substring(0,character);
 	const wordSplit = hoverLine.split(" ");
 	let word = wordSplit[wordSplit.length - 1];
-	if(word.startsWith('('))
-		word = word.slice(1);
+	let bracketSplit = word.split('(');
+	word = bracketSplit[bracketSplit.length - 1];
 	word = word.trim();
 	const inteliSenseSuggestions = getInteliSenseSuggestions(document, word);
 	return inteliSenseSuggestions;

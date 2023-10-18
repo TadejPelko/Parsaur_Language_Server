@@ -3,7 +3,7 @@
 	"displayName": "Parsaur Language Server",
 	"description": "Language server for Parsaur",
 	"author": "Timen Stepisnik Perdih",
-	"version": "1.2.2",
+	"version": "1.2.3",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Timen-Stepisnik-Perdih/Parsaur_Language_Server"
