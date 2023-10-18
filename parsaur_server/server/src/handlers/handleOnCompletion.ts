@@ -416,6 +416,11 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 					label: 'LINK_GROUP',
 					kind: CompletionItemKind.Text,
 					data: 41
+				},
+				{
+					label: 'PARSE',
+					kind: CompletionItemKind.Text,
+					data: 42
 				}
 			]);
 		return returnArray;

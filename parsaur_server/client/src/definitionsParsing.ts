@@ -155,6 +155,7 @@ export async function parseDefinitions(){
 									}	// searching regular expressions	
 								}
 								if (termIx > -1){
+									// Add new definition to the hierarchy
 									const topLevel = context.length == 0;
 									const definitionKey = constructDictionaryKey(context, extractedName, uri);
 									const newEntry = new DefinitionEntry(

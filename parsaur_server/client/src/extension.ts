@@ -168,8 +168,14 @@ function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
 	let dotHierarchy: any[] = [];
 	dotHierarchy = word.split(".");
 	dotHierarchy.pop();
-	if (dotHierarchy.length < 1)
-		return;
+	if (dotHierarchy.length < 1){ //top level definitions
+		let returnArray = [];
+		for (const keyName in suggestionsDictionary){
+			if (suggestionsDictionary[keyName].context == "" && suggestionsDictionary[keyName].name != "FILE_ELEMENT") // we already add file_element in another place
+				returnArray.push(suggestionsDictionary[keyName].name);
+		}
+		return returnArray;
+	}
 	for (const keyName in suggestionsDictionary){
 		if (arraysEqual(dotHierarchy, suggestionsDictionary[keyName].fullName.split('.')))
 			return suggestionsDictionary[keyName].children;

@@ -129,6 +129,9 @@ export function getCompletionResolveHandler(){
 		}else if (item.data === 41) {
 			item.detail = 'LINK_GROUP details';
 			item.documentation = 'docs';
+		}else if (item.data === 42) {
+			item.detail = 'PARSE details';
+			item.documentation = 'docs';
 		}
 		return item;
 	};
