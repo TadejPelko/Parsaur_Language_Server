@@ -421,6 +421,21 @@ export function getCompletionHandler(documents: TextDocuments<TextDocument>){
 					label: 'PARSE',
 					kind: CompletionItemKind.Text,
 					data: 42
+				},
+				{
+					label: 'SKIP',
+					kind: CompletionItemKind.Text,
+					data: 43
+				},
+				{
+					label: 'BIND',
+					kind: CompletionItemKind.Text,
+					data: 44
+				},
+				{
+					label: 'PARENT',
+					kind: CompletionItemKind.Text,
+					data: 45
 				}
 			]);
 		return returnArray;

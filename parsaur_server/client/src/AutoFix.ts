@@ -194,6 +194,8 @@ export class AutoFix implements vscode.CodeActionProvider {
 		"DisplayItem",
 		"PROPERTY",
 		"LINK_GROUP",
-		"PARSE"
+		"PARSE",
+		"BIND",
+		"PARENT"
 	];
 }

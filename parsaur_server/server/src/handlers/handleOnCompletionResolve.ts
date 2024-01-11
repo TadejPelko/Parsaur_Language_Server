@@ -132,6 +132,15 @@ export function getCompletionResolveHandler(){
 		}else if (item.data === 42) {
 			item.detail = 'PARSE details';
 			item.documentation = 'docs';
+		}else if (item.data === 43) {
+			item.detail = 'SKIP details';
+			item.documentation = 'docs';
+		}else if (item.data === 44) {
+			item.detail = 'BIND details';
+			item.documentation = 'docs';
+		}else if (item.data === 45) {
+			item.detail = 'PARENT details';
+			item.documentation = 'docs';
 		}
 		return item;
 	};
