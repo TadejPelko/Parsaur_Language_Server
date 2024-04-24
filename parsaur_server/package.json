@@ -3,7 +3,7 @@
 	"displayName": "Parsaur Language Server",
 	"description": "Language server for Parsaur",
 	"author": "Timen Stepisnik Perdih",
-	"version": "1.2.5",
+	"version": "1.2.6",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Timen-Stepisnik-Perdih/Parsaur_Language_Server"
@@ -85,7 +85,7 @@
 				"title": "Open Definition"
 			},
 			{
-				"command": "nodeDependencies.refreshEntry",
+				"command": "nodeDependencies.searchEntry",
 				"title": "Search",
 				"icon": {
 					"light": "resources/light/icons8-search.svg",
@@ -106,7 +106,7 @@
 			],
 			"view/title": [
 				{
-					"command": "nodeDependencies.refreshEntry",
+					"command": "nodeDependencies.searchEntry",
 					"when": "view == nodeDependencies",
 					"group": "navigation"
 				}

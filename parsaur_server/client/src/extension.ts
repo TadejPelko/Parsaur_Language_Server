@@ -5,7 +5,7 @@
 
 import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
-import { Dependency, DepNodeProvider, openDefinition } from './nodeDependencies';
+import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
 import { refreshDiagnostics } from './diagnostics';
 //import { subscribeToDocumentChanges } from './diagnostics';
@@ -19,15 +19,18 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
+import { SuggestionsProvider } from './suggestions';
+import { LocationProvider } from './goToDefinition';
 
 let client: LanguageClient;
 let suggestionsDictionary: {[key: string]: DefinitionEntry} = {};
 const nodeDependenciesProvider = new DepNodeProvider({});
-
+const suggestionsProvider = new SuggestionsProvider({});
+const locationProvider = new LocationProvider({});
 
 export function activate(context: ExtensionContext) {
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
-	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
+	vscode.commands.registerCommand('nodeDependencies.searchEntry', () => nodeDependenciesProvider.provideNodeSearch());
 
 	const termDiagnostic = vscode.languages.createDiagnosticCollection('test');
 	context.subscriptions.push(termDiagnostic);
@@ -37,7 +40,7 @@ export function activate(context: ExtensionContext) {
 	});
 
 	vscode.commands.registerCommand('nodeDependencies.openDefinition', (node: Dependency) => {
-		openDefinition(suggestionsDictionary, node);
+		nodeDependenciesProvider.openDefinition(node);
 	});
 
 	getDefinitions().then((res) => {
@@ -45,7 +48,7 @@ export function activate(context: ExtensionContext) {
 		refreshDiagnostics(res, termDiagnostic);
 	});
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
-		console.log("SAVED DOC", document);
+		console.log("Saved document!", document);
 		getDefinitions().then((res) => {
 			setNewDefinitions(res);
 			refreshDiagnostics(res, termDiagnostic);
@@ -60,7 +63,7 @@ export function activate(context: ExtensionContext) {
 		'prs',
 		{
 			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
-				const val = getCodeCompletions(document, position);
+				const val = suggestionsProvider.getCodeCompletions(document, position);
 				const suggestionsArray = [];
 				for (const suggestion of val){
 					suggestionsArray.push(new vscode.CompletionItem(suggestion, vscode.CompletionItemKind.Method));
@@ -79,19 +82,11 @@ export function activate(context: ExtensionContext) {
 		},
 		'?' // triggered whenever a '?' is being typed
 	));
-	context.subscriptions.push(vscode.languages.registerDefinitionProvider(
+	context.subscriptions.push(vscode.languages.registerDefinitionProvider( // Go to definition feature
 		'prs',
 		{
 			provideDefinition(document, position, token) {
-				const hoverLine = document.lineAt(position.line).text;
-				const sequence = getSequenceAt(hoverLine, position.character); // word for definition search
-				for (const keyName in suggestionsDictionary){
-					if (suggestionsDictionary[keyName].fullName == sequence){
-						const position = new vscode.Position(suggestionsDictionary[keyName].line, suggestionsDictionary[keyName].character);
-						const file = vscode.Uri.file(suggestionsDictionary[keyName].fileName);
-						return new vscode.Location(file, position);
-					}
-				}
+				return locationProvider.getLocation(document, position, token);
 			},
 		}
 	));
@@ -142,101 +137,9 @@ export function activate(context: ExtensionContext) {
 
 function setNewDefinitions(parsed){
 	suggestionsDictionary = parsed;
-	nodeDependenciesProvider.refreshDictionary(parsed)
-}
-
-function arraysEqual(a:any[], b:any[]) {
-    if (a === b) return true;
-    if (a == null || b == null) return false;
-    if (a.length !== b.length) return false;
-
-    for (let i = 0; i < a.length; ++i) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
-
-/**
-   * Suggests relevant code completions.
-   * 
-   * @param line - Relevant line in document
-   * @param word - The word for which we want InteliSense
-   * 
-   * @returns code suggestion {@link CompletionList}
-*/
-function getInteliSenseSuggestions(document: vscode.TextDocument, word) {
-	let dotHierarchy: any[] = [];
-	dotHierarchy = word.split(".");
-	dotHierarchy.pop();
-	if (dotHierarchy.length < 1){ //top level definitions
-		let returnArray = [];
-		for (const keyName in suggestionsDictionary){
-			if (suggestionsDictionary[keyName].context == "" && suggestionsDictionary[keyName].name != "FILE_ELEMENT") // we already add file_element in another place
-				returnArray.push(suggestionsDictionary[keyName].name);
-		}
-		return returnArray;
-	}
-	for (const keyName in suggestionsDictionary){
-		if (arraysEqual(dotHierarchy, suggestionsDictionary[keyName].fullName.split('.')))
-			return suggestionsDictionary[keyName].children;
-		const contextCopy = suggestionsDictionary[keyName].fullName.split('.');
-		contextCopy[0] = "?"+contextCopy[0];
-		if (arraysEqual(dotHierarchy, contextCopy)) // if we use inheritance
-			return suggestionsDictionary[keyName].children;
-	}
-}
-
-/**
-   * Suggests relevant code completions.
-   * 
-   * @param document - Open documents in workspace
-   * @param position - Position of the character for which we are looking the code completion
-   * 
-   * @returns The completion handler
-*/
-export function getCodeCompletions(document: vscode.TextDocument, position: vscode.Position){
-	// The pass parameter contains the position of the text document in
-	// which code complete got requested. For the example we ignore this
-	// info and always provide the same completion items.
-	const line = position.line;
-	const character = position.character;
-	const doc = document;
-	const text = doc.getText();
-	const lines = text.split('\n');
-	const hoverLine = lines[line].substring(0,character);
-	const wordSplit = hoverLine.split(" ");
-	let word = wordSplit[wordSplit.length - 1];
-	let bracketSplit = word.split('(');
-	word = bracketSplit[bracketSplit.length - 1];
-	word = word.trim();
-	const inteliSenseSuggestions = getInteliSenseSuggestions(document, word);
-	return inteliSenseSuggestions;
-}
-
-/**
-   * Extracts the word of the character. 
-   * 
-   * @param str - String in which the word we want to extract is found
-   * @param pos - Position of the character within the string, of which we want to extract the sequence
-   * 
-   * @returns The word of the character 
-*/
-function getSequenceAt(str: string, pos: number) {
-    // Perform type conversions.
-    str = String(str);
-    pos = Number(pos) >>> 0;
-
-    // Search for the word's beginning and end.
-    const left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
-        right = str.slice(pos).search(/\W/);
-
-    // The last word in the string is a special case.
-    if (right < 0) {
-        return str.slice(left);
-    }
-
-    // Return the word, using the located bounds to extract it from the string.
-    return str.slice(left, right + pos);
+	suggestionsProvider.refreshDictionary(parsed);
+	nodeDependenciesProvider.refreshDictionary(parsed);
+	locationProvider.refreshDictionary(parsed);
 }
 
 export function deactivate(): Thenable<void> | undefined {

@@ -58,7 +58,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 
  /**
-   * Finds children of a definition
+   * Finds children of a definition. These are hard coded (potentially upgradeable).
    * 
    * @remarks
    * If the parameter is not given then it returns the two "top level" definitions.
@@ -72,7 +72,6 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			return this.readItemFromEdgelistPromise(element.fullName);
 		}else{
 			return Promise.resolve([
-						//new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
 						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", vscode.TreeItemCollapsibleState.Collapsed, []),
 						new Dependency("FILE_OBJECT", "FILE_OBJECT", vscode.TreeItemCollapsibleState.Collapsed, []),
 						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", vscode.TreeItemCollapsibleState.Collapsed, []),
@@ -89,7 +88,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			return;
 
 		const input_term = await searchInput;
-		const inputTermUpperCase = input_term.toUpperCase();
+		if (!input_term)
+			return;
+
+		const inputTermUpperCase = input_term.toUpperCase(); // User input we need to search for
+
+		// Round 1 of search -> we search for a definition that matches completely
 		for (const entry in this.dependencyDictionary){
 			if (inputTermUpperCase == this.dependencyDictionary[entry].name){
 				vscode.env.clipboard.writeText(this.dependencyDictionary[entry].fullName);
@@ -97,7 +101,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 				return;
 			}
 		}
-		// Round 2 of search
+		// Round 2 of search -> now we search for a definition that partially matches
 		for (const entry in this.dependencyDictionary){
 			if (this.dependencyDictionary[entry].fullName.indexOf(inputTermUpperCase) > -1){
 				vscode.env.clipboard.writeText(this.dependencyDictionary[entry].fullName);
@@ -107,34 +111,34 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 		}
 		vscode.window.showInformationMessage(`Could not find ${input_term}.`);
 	}
-}
 
-
- /**
+	/**
    * Opens the file containing the definition at its location. 
    * 
    * @param suggestionsDictionary - Definitions dictionary
    * @param searchDependency - Dependency class of the searched defi
    */
-export function openDefinition(suggestionsDictionary: {[key: string]: DefinitionEntry}, searchDependency: Dependency){
-	for(const entry in suggestionsDictionary){
-		if(suggestionsDictionary[entry].fullName == searchDependency.fullName){
-			vscode.workspace.openTextDocument(suggestionsDictionary[entry].fileName).then(doc => 
-				{
-					vscode.window.showTextDocument(doc).then(editor => 
+	public openDefinition(searchDependency: Dependency){
+		for(const entry in this.dependencyDictionary){
+			if(this.dependencyDictionary[entry].fullName == searchDependency.fullName){
+				vscode.workspace.openTextDocument(this.dependencyDictionary[entry].fileName).then(doc => 
 					{
-						const pos = new vscode.Position(suggestionsDictionary[entry].line, suggestionsDictionary[entry].character);
-						// Line added - by having a selection at the same position twice, the cursor jumps there
-						editor.selections = [new vscode.Selection(pos,pos)]; 
-				
-						// And the visible range jumps there too
-						const range = new vscode.Range(pos, pos);
-						editor.revealRange(range);
+						vscode.window.showTextDocument(doc).then(editor => 
+						{
+							const pos = new vscode.Position(this.dependencyDictionary[entry].line, this.dependencyDictionary[entry].character);
+							// Line added - by having a selection at the same position twice, the cursor jumps there
+							editor.selections = [new vscode.Selection(pos,pos)]; 
+					
+							// And the visible range jumps there too
+							const range = new vscode.Range(pos, pos);
+							editor.revealRange(range);
+						});
 					});
-				});
+			}
 		}
 	}
 }
+
 
  /**
    * Provides a class that holds a dependency.
