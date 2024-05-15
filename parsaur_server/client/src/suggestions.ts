@@ -79,13 +79,4 @@ export class SuggestionsProvider{
         const inteliSenseSuggestions = this.getInteliSenseSuggestions(document, word);
         return inteliSenseSuggestions;
     }
-    
-    /**
-       * Extracts the word of the character. 
-       * 
-       * @param str - String in which the word we want to extract is found
-       * @param pos - Position of the character within the string, of which we want to extract the sequence
-       * 
-       * @returns The word of the character 
-    */
 }

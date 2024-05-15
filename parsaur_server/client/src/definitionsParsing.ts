@@ -53,7 +53,7 @@ export function constructDictionaryKey(context, extractedName: string, uri: vsco
 
 
  /**
-   * Iterates over local .mql files and parses definitons. 
+   * Iterates over local .mql files and parses definitons.
    * 
    * @returns Definitions dictionary.
    */
@@ -63,8 +63,8 @@ export async function parseDefinitions(){
 	const uris = await vscode.workspace.findFiles('**/{*.mql}');
 	for (const uri of uris){
 		const split = uri.path.split('/');
-		split.shift(); // remove the unnecessary "c:"
-		await fs.promises.readFile(split.join("/")).then((res) => { 	//	This might be changed to parallel
+		split.shift(); // remove the unnecessary "c:" disk name
+		await fs.promises.readFile(split.join("/")).then((res) => { 	//	This might be changed to parallel but currently seems unnecessary
 			const doc = res.toString();
 			const context = [];
 			const dictionaryKeyContext = [];
@@ -78,7 +78,7 @@ export async function parseDefinitions(){
 				for (let lineIx = 0; lineIx < documentLines.length; lineIx++){
 					let currentLine = documentLines[lineIx];
 					// Check for comment characters
-					if (ignoreLineDueToComment){
+					if (ignoreLineDueToComment){ // Line is in multiline comment
 						const multi_line_comment_close_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_CLOSE);
 						if (multi_line_comment_close_char_ix > -1){ //line contains the end of multi-line comment
 							currentLine = currentLine.substring(multi_line_comment_close_char_ix, currentLine.length);
@@ -88,12 +88,12 @@ export async function parseDefinitions(){
 					}
 					const multi_line_comment_open_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_OPEN);
 					if (multi_line_comment_open_char_ix > -1){
-						currentLine = currentLine.substring(0, multi_line_comment_open_char_ix);
+						currentLine = currentLine.substring(0, multi_line_comment_open_char_ix); // Trim line to character
 						ignoreLineDueToComment = true;
 					}
 					const single_line_comment_char_ix = currentLine.indexOf(SINGLE_LINE_COMMENT_CHARACTER);
 					if (single_line_comment_char_ix > -1){
-						currentLine = currentLine.substring(0, single_line_comment_char_ix);
+						currentLine = currentLine.substring(0, single_line_comment_char_ix); // Trim line to character
 					}
 
 					// check for '}' context closing
@@ -210,7 +210,7 @@ export async function parseDefinitions(){
 }
 
  /**
-   * Processes the parsed definitions, handling imports. 
+   * Processes the parsed definitions, handles imports. 
    * 
    * @param definitionsDictionary - Definitions dictionary
    * 

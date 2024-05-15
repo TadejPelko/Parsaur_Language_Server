@@ -5,6 +5,12 @@ const SINGLE_LINE_COMMENT_CHARACTER = "//";
 const MULTI_LINE_COMMENT_CHARACTER_OPEN = "/*";
 const MULTI_LINE_COMMENT_CHARACTER_CLOSE = "*/";
 
+/**
+   * Checks for falsely written definitions in all files. Diagnostics are reported as "problems" to the user.  
+   * 
+   * @param suggestionsDictionary - dictionary of defined terms (definitions)
+   * @param collection - collection of diagnostics shown to the user
+*/
 export async function refreshDiagnostics(suggestionsDictionary, collection: vscode.DiagnosticCollection) {
 	console.log("Beginning diagnostics");
 	collection.clear();
@@ -65,7 +71,7 @@ export async function refreshDiagnostics(suggestionsDictionary, collection: vsco
 }
 
 /**
-   * Extracts the word of the character (allowing "."). 
+   * Extracts the word of the character but allowing "." (for full path definitions).  
    * 
    * @param str - string in which the word we want to extract is found
    * @param position - position of the character within the string

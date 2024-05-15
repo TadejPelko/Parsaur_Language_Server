@@ -1,8 +1,8 @@
 import {CompletionItem} from 'vscode-languageserver/node';
  /**
    * Provides details and documentation of the reserved words for Parsaur language.
-   * 
-   * @returns Funtion that completes the {@link CompletionItem} with the relevant details and documentation. 
+   * THESE ARE TO BE WRITTEN!
+   * @returns Completed {@link CompletionItem} with the relevant details and documentation. 
    */
 export function getCompletionResolveHandler(){
 	return (item: CompletionItem): CompletionItem => {

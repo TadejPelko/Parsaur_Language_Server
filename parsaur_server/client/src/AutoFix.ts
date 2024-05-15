@@ -150,7 +150,7 @@ export class AutoFix implements vscode.CodeActionProvider {
 	}
 
  /**
-   * Array of possible code fixes.  
+   * Array of possible code fixes. This can be changed into a dynamic list -> for examples dynamically add all terms regularly featured in files.
    */
 	private listOfAutoFixes = [
 		"CONSTRUCTOR",
