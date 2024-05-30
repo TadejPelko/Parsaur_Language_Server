@@ -115,7 +115,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	/**
    * Opens the file containing the definition at its location. 
    * 
-   * @param suggestionsDictionary - Definitions dictionary
+   * @param dependencyDictionary - Definitions dictionary
    * @param searchDependency - Dependency class of the searched defi
    */
 	public openDefinition(searchDependency: Dependency){

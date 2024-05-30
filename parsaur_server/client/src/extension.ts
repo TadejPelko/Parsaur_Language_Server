@@ -7,7 +7,7 @@ import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
-import { refreshDiagnostics } from './diagnostics';
+import { DiagnosticsProvider } from './diagnostics';
 //import { subscribeToDocumentChanges } from './diagnostics';
 import { DefinitionEntry, getDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
@@ -23,10 +23,11 @@ import { SuggestionsProvider } from './suggestions';
 import { LocationProvider } from './goToDefinition';
 
 let client: LanguageClient;
-let suggestionsDictionary: {[key: string]: DefinitionEntry} = {};
+let dependencyDictionary: {[key: string]: DefinitionEntry} = {};
 const nodeDependenciesProvider = new DepNodeProvider({});
 const suggestionsProvider = new SuggestionsProvider({});
 const locationProvider = new LocationProvider({});
+const diagnosticsProvider = new DiagnosticsProvider();
 
 export function activate(context: ExtensionContext) {
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
@@ -45,13 +46,13 @@ export function activate(context: ExtensionContext) {
 
 	getDefinitions().then((res) => {
 		setNewDefinitions(res);
-		refreshDiagnostics(res, termDiagnostic);
+		diagnosticsProvider.refreshDiagnostics(res, termDiagnostic);
 	});
 	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
 		console.log("Saved document!", document);
 		getDefinitions().then((res) => {
 			setNewDefinitions(res);
-			refreshDiagnostics(res, termDiagnostic);
+			diagnosticsProvider.refreshDiagnostics(res, termDiagnostic);
 		});
 	});
 	context.subscriptions.push(
@@ -88,6 +89,14 @@ export function activate(context: ExtensionContext) {
 			provideDefinition(document, position, token) {
 				return locationProvider.getLocation(document, position, token);
 			},
+		}
+	));
+	context.subscriptions.push(vscode.languages.registerReferenceProvider(
+		"prs",
+		{
+			provideReferences(document, position, context, token){
+				return diagnosticsProvider.getReferences(document, position, dependencyDictionary);
+			}
 		}
 	));
 
@@ -136,7 +145,7 @@ export function activate(context: ExtensionContext) {
 }
 
 function setNewDefinitions(parsed){
-	suggestionsDictionary = parsed;
+	dependencyDictionary = parsed;
 	suggestionsProvider.refreshDictionary(parsed);
 	nodeDependenciesProvider.refreshDictionary(parsed);
 	locationProvider.refreshDictionary(parsed);
