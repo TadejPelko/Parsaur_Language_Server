@@ -32,7 +32,18 @@ const diagnosticsProvider = new DiagnosticsProvider();
 export function activate(context: ExtensionContext) {
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
 	vscode.commands.registerCommand('nodeDependencies.searchEntry', () => nodeDependenciesProvider.provideNodeSearch());
-
+	let updateCommand = vscode.commands.registerCommand('nodeDependencies.updateDefinition', async function () {
+		// Your command code here
+		vscode.window.showInformationMessage("Input the new definition name.");
+		const newDefinitionNameInput = vscode.window.showInputBox();
+		if (!newDefinitionNameInput)
+			return;
+		const input_term = await newDefinitionNameInput;
+		if (!input_term)
+			return;
+		diagnosticsProvider.updateReferences(input_term, dependencyDictionary);
+	  });
+	context.subscriptions.push(updateCommand);
 	const termDiagnostic = vscode.languages.createDiagnosticCollection('test');
 	context.subscriptions.push(termDiagnostic);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
@@ -99,6 +110,7 @@ export function activate(context: ExtensionContext) {
 			}
 		}
 	));
+
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
 	// subscribeToDocumentChanges(context, emojiDiagnostics);

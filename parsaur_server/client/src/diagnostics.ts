@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { DefinitionEntry } from './definitionsParsing';
+import { doc } from './test/helper';
 
 export class DiagnosticsProvider {
 
@@ -11,6 +12,59 @@ export class DiagnosticsProvider {
 	private referencesDictionary = {};
 
 	constructor() {}
+
+	/**
+	 * Updates the definition and all its references
+	*/
+	public async updateReferences(newDefinitionName : string, dependencyDictionary : {[key: string]: DefinitionEntry}){
+		const activeEditor = vscode.window.activeTextEditor;
+		if (!activeEditor)
+			return;
+	
+		// Get the current selection
+		const selection = activeEditor.selection;
+		let documentString = activeEditor.document.getText()
+		let lineIx = selection.start.line;
+		let currentDefinition = this.getSequenceAt(documentString.split('\n')[lineIx], selection.start.character);
+		let positions = this.getSequenceAtPositions(documentString.split('\n')[lineIx], selection.start.character);
+		let docName = activeEditor.document.fileName.toString();
+		// We need to put the file name in the same format as our entries
+		docName = ("/" + docName).split("\\").join("/");
+		let findString = ""
+		for (const entry in dependencyDictionary){
+			if (dependencyDictionary[entry].name == currentDefinition && dependencyDictionary[entry].line == lineIx && dependencyDictionary[entry].fileName == docName) {
+				findString = dependencyDictionary[entry].fullName;
+				var fullNewDefinitionName = dependencyDictionary[entry].context + "." + newDefinitionName;
+				break;
+			}
+		}
+		if (findString == ""){
+			vscode.window.showInformationMessage("Could not find this term among definitions. Perhaps this is not a declaration?");
+			return;
+		}
+		
+		activeEditor.edit(editBuilder => {
+			// For example, insert 'Hello World' at the first line of the document
+			editBuilder.replace(new vscode.Range(new vscode.Position(lineIx, positions[0]), new vscode.Position(lineIx, positions[1])),newDefinitionName)
+		})
+		vscode.commands.executeCommand('workbench.action.findInFiles',
+		{
+			query: findString,   // arguments to the findInFiles command
+			replace: fullNewDefinitionName,
+			triggerSearch: true,
+			preserveCase: true,
+			useExcludeSettingsAndIgnoreFiles: true,
+			isRegex: false,
+			isCaseSensitive: true,
+			matchWholeWord: true,
+			filesToInclude: "",
+			filesToExclude: ""
+		}).then(() => {                      // this command just returns 'undefined'
+			setTimeout(() => {
+			vscode.commands.executeCommand('search.action.replaceAll');
+			}, 1000);
+		});
+	}
 
 	/**
 	 * Extracts the term at given location and returns references of the extracted term.
@@ -122,5 +176,16 @@ export class DiagnosticsProvider {
 
 		// Return the word, using the located bounds to extract it from the string.
 		return str.slice(left, right + pos);
+	}
+	private getSequenceAtPositions(str: string, pos: number): [number, number] {
+		// Perform type conversions.
+		str = String(str);
+		pos = Number(pos) >>> 0;
+
+		// Search for the word's beginning and end.
+		const left = str.slice(0, pos + 1).search(/(\w|\.)+$/),
+			right = str.slice(pos).search(/( |\(|\)|\t|\,|\;|\n|\r|\r\n)+/);
+
+		return [left, right + pos];
 	}
 }
