@@ -9,7 +9,7 @@ import { Hover, HoverParams, TextDocument, TextDocuments } from 'vscode-language
    * @returns The word of the character 
    */
 
-function getWordAt(str: string, pos: number) {
+function getWordAt(str: string, pos: number): string {
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;

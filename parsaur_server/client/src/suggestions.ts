@@ -4,15 +4,15 @@ import * as vscode from 'vscode';
 export class SuggestionsProvider{
 	private dependencyDictionary: {[key: string]: DefinitionEntry} = {};
 
-    constructor(parsedDefinitions) {
+    constructor(parsedDefinitions : {[key: string]: DefinitionEntry}) {
 		this.dependencyDictionary = parsedDefinitions;
 	}
 
-    public refreshDictionary(dictionary){
+    public refreshDictionary(dictionary : {[key: string]: DefinitionEntry}){
 		this.dependencyDictionary = dictionary;
 	}
     
-    private arraysEqual(a:any[], b:any[]) {
+    private arraysEqual(a:any[], b:any[]) : boolean {
         if (a === b) return true;
         if (a == null || b == null) return false;
         if (a.length !== b.length) return false;
@@ -31,7 +31,7 @@ export class SuggestionsProvider{
        * 
        * @returns code suggestion {@link CompletionList}
     */
-    private getInteliSenseSuggestions(document: vscode.TextDocument, word) {
+    private getInteliSenseSuggestions(document: vscode.TextDocument, word: string): string[] {
         let dotHierarchy: any[] = [];
         dotHierarchy = word.split(".");
         dotHierarchy.pop();

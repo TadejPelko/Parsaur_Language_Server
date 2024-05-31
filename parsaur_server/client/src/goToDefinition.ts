@@ -5,11 +5,11 @@ import { getSequenceAt } from "./sequenceParsing";
 export class LocationProvider{
     private dependencyDictionary: {[key: string]: DefinitionEntry} = {};
 
-    constructor(parsedDefinitions) {
+    constructor(parsedDefinitions : {[key: string]: DefinitionEntry}) {
 		this.dependencyDictionary = parsedDefinitions;
 	}
 
-    public refreshDictionary(dictionary){
+    public refreshDictionary(dictionary : {[key: string]: DefinitionEntry}){
 		this.dependencyDictionary = dictionary;
 	}
 
@@ -22,7 +22,7 @@ export class LocationProvider{
          * @return A definition or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
     */
-    public getLocation(document, position, token){
+    public getLocation(document : vscode.TextDocument, position : vscode.Position, token) : vscode.Location {
         const hoverLine = document.lineAt(position.line).text;
         const sequence = getSequenceAt(hoverLine, position.character); // word for definition search
         for (const keyName in this.dependencyDictionary){

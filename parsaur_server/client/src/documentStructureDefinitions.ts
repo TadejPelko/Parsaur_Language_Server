@@ -1,0 +1,4 @@
+export const SINGLE_LINE_COMMENT_CHARACTER = "//";
+export const MULTI_LINE_COMMENT_CHARACTER_OPEN = "/*";
+export const MULTI_LINE_COMMENT_CHARACTER_CLOSE = "*/";
+export const IMPORT_STATEMENT = "IMPORT";

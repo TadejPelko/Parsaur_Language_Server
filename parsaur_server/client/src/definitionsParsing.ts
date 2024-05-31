@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { getSequenceAt } from './sequenceParsing';
+import { IMPORT_STATEMENT, MULTI_LINE_COMMENT_CHARACTER_CLOSE, MULTI_LINE_COMMENT_CHARACTER_OPEN, SINGLE_LINE_COMMENT_CHARACTER } from './documentStructureDefinitions';
 
 const regularExpressions= [
 	{
@@ -20,10 +21,6 @@ const regularExpressions= [
 		name: "CREATE GRID "
 	}
 ];
-const IMPORT_STATEMENT = "IMPORT";
-const SINGLE_LINE_COMMENT_CHARACTER = "//";
-const MULTI_LINE_COMMENT_CHARACTER_OPEN = "/*";
-const MULTI_LINE_COMMENT_CHARACTER_CLOSE = "*/";
 
  /**
    * Creates a dictionary of definitions. 
@@ -44,7 +41,7 @@ export async function getDefinitions(){
    * 
    * @returns Dictionary key for the definitions.
    */
-export function constructDictionaryKey(context, extractedName: string, uri: vscode.Uri){
+export function constructDictionaryKey(context, extractedName: string, uri: vscode.Uri) : string{
 	let definitionKey = context.join(".") + "." + extractedName + "_" + uri;
 	if (context.length == 0)
 		definitionKey = definitionKey.substring(1, definitionKey.length -1);
@@ -57,7 +54,7 @@ export function constructDictionaryKey(context, extractedName: string, uri: vsco
    * 
    * @returns Definitions dictionary.
    */
-export async function parseDefinitions(){
+export async function parseDefinitions() : Promise<{ [key: string]: DefinitionEntry; }>{
 	console.log("Beginning parsing");
 	const definitionsDictionary: {[key: string]: DefinitionEntry} = {};
 	const uris = await vscode.workspace.findFiles('**/{*.mql}');
@@ -216,7 +213,7 @@ export async function parseDefinitions(){
    * 
    * @returns Corrected (processed) definitions dictionary.
    */
-export function postProcessingDefinitions(definitionsDictionary: {[key: string]: DefinitionEntry}){ //Replaces imports with children - top level definitions of imported file
+export function postProcessingDefinitions(definitionsDictionary: {[key: string]: DefinitionEntry}) : {[key: string]: DefinitionEntry}{ //Replaces imports with children - top level definitions of imported file
 	console.log("Beginning post-parsing procedure");
 	for (const keyName in definitionsDictionary){
 		for (const importName of definitionsDictionary[keyName].imports){
@@ -249,7 +246,7 @@ export function postProcessingDefinitions(definitionsDictionary: {[key: string]:
    * 
    * @returns Definitions dictionary.
    */
-export function recursivelyAddContext(definitionsDictionary: {[key: string]: DefinitionEntry}, importEntry: DefinitionEntry, keyName: string){
+export function recursivelyAddContext(definitionsDictionary: {[key: string]: DefinitionEntry}, importEntry: DefinitionEntry, keyName: string) : {[key: string]: DefinitionEntry}{
 	if (importEntry.context != '' && definitionsDictionary[keyName].context != '')
 		importEntry.context = definitionsDictionary[keyName].context + "." + definitionsDictionary[keyName].name + "." + importEntry.context;
 	else if (importEntry.context == '' && definitionsDictionary[keyName].context != '')

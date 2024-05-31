@@ -19,11 +19,11 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    *
    * @returns DepNodeProvider class instance
    */
-	constructor(parsedDefinitions) {
+	constructor(parsedDefinitions : {[key: string]: DefinitionEntry}) {
 		this.dependencyDictionary = parsedDefinitions;
 	}
 
-	public refreshDictionary(dictionary){
+	public refreshDictionary(dictionary : {[key: string]: DefinitionEntry}){
 		this.dependencyDictionary = dictionary;
 	}
 

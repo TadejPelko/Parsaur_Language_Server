@@ -8,7 +8,6 @@ import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
 import { DiagnosticsProvider } from './diagnostics';
-//import { subscribeToDocumentChanges } from './diagnostics';
 import { DefinitionEntry, getDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
 

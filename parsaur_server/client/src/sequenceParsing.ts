@@ -6,7 +6,7 @@
    * 
    * @returns The word of the character 
 */
-export function getSequenceAt(str: string, pos: number) {
+export function getSequenceAt(str: string, pos: number) : string {
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;

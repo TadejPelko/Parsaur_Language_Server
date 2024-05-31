@@ -2,12 +2,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { DefinitionEntry } from './definitionsParsing';
 import { doc } from './test/helper';
+import {  MULTI_LINE_COMMENT_CHARACTER_CLOSE, MULTI_LINE_COMMENT_CHARACTER_OPEN, SINGLE_LINE_COMMENT_CHARACTER} from './documentStructureDefinitions';
 
 export class DiagnosticsProvider {
-
-	private SINGLE_LINE_COMMENT_CHARACTER = "//";
-	private MULTI_LINE_COMMENT_CHARACTER_OPEN = "/*";
-	private MULTI_LINE_COMMENT_CHARACTER_CLOSE = "*/";
 
 	private referencesDictionary = {};
 
@@ -25,8 +22,9 @@ export class DiagnosticsProvider {
 		const selection = activeEditor.selection;
 		let documentString = activeEditor.document.getText()
 		let lineIx = selection.start.line;
-		let currentDefinition = this.getSequenceAt(documentString.split('\n')[lineIx], selection.start.character);
-		let positions = this.getSequenceAtPositions(documentString.split('\n')[lineIx], selection.start.character);
+		let line = documentString.split('\n')[lineIx];
+		let currentDefinition = this.getSequenceAt(line, selection.start.character);
+		let positions = this.getSequenceAtPositions(line, selection.start.character);
 		let docName = activeEditor.document.fileName.toString();
 		// We need to put the file name in the same format as our entries
 		docName = ("/" + docName).split("\\").join("/");
@@ -88,7 +86,7 @@ export class DiagnosticsProvider {
 	 * @param dependencyDictionary - dictionary of defined terms (definitions)
 	 * @param collection - collection of diagnostics shown to the user
 	*/
-	public async refreshDiagnostics(dependencyDictionary, collection: vscode.DiagnosticCollection) {
+	public async refreshDiagnostics(dependencyDictionary : {[key: string]: DefinitionEntry}, collection: vscode.DiagnosticCollection) {
 		console.log("Beginning diagnostics");
 		collection.clear();
 		this.referencesDictionary = {};
@@ -106,19 +104,19 @@ export class DiagnosticsProvider {
 						let currentLine = documentLines[lineIx];
 						// Check for comment characters
 						if (ignoreLineDueToComment){
-							const multi_line_comment_close_char_ix = currentLine.indexOf(this.MULTI_LINE_COMMENT_CHARACTER_CLOSE);
+							const multi_line_comment_close_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_CLOSE);
 							if (multi_line_comment_close_char_ix > -1){ //line contains the end of multi-line comment
 								currentLine = currentLine.substring(multi_line_comment_close_char_ix, currentLine.length);
 								ignoreLineDueToComment = false;
 							}else
 								continue; // line is commented
 						}
-						const multi_line_comment_open_char_ix = currentLine.indexOf(this.MULTI_LINE_COMMENT_CHARACTER_OPEN);
+						const multi_line_comment_open_char_ix = currentLine.indexOf(MULTI_LINE_COMMENT_CHARACTER_OPEN);
 						if (multi_line_comment_open_char_ix > -1){
 							currentLine = currentLine.substring(0, multi_line_comment_open_char_ix);
 							ignoreLineDueToComment = true;
 						}
-						const single_line_comment_char_ix = currentLine.indexOf(this.SINGLE_LINE_COMMENT_CHARACTER);
+						const single_line_comment_char_ix = currentLine.indexOf(SINGLE_LINE_COMMENT_CHARACTER);
 						if (single_line_comment_char_ix > -1){
 							currentLine = currentLine.substring(0, single_line_comment_char_ix);
 						}
