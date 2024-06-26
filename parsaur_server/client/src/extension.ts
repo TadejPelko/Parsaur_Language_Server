@@ -7,7 +7,8 @@ import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
 import { Dependency, DepNodeProvider } from './nodeDependencies';
 import { AutoFix } from './AutoFix';
-import { subscribeToDocumentChanges } from './diagnostics';
+import { DiagnosticsProvider } from './diagnostics';
+import { DefinitionEntry, getDefinitions } from './definitionsParsing';
 import * as vscode from 'vscode';
 
 
@@ -17,26 +18,98 @@ import {
 	ServerOptions,
 	TransportKind
 } from 'vscode-languageclient/node';
+import { SuggestionsProvider } from './suggestions';
+import { LocationProvider } from './goToDefinition';
 
 let client: LanguageClient;
-
-
+let dependencyDictionary: {[key: string]: DefinitionEntry} = {};
+const nodeDependenciesProvider = new DepNodeProvider({});
+const suggestionsProvider = new SuggestionsProvider({});
+const locationProvider = new LocationProvider({});
+const diagnosticsProvider = new DiagnosticsProvider();
 
 export function activate(context: ExtensionContext) {
-	const nodeDependenciesProvider = new DepNodeProvider();
 	window.registerTreeDataProvider('nodeDependencies', nodeDependenciesProvider);
+	vscode.commands.registerCommand('nodeDependencies.searchEntry', () => nodeDependenciesProvider.provideNodeSearch());
+	let updateCommand = vscode.commands.registerCommand('nodeDependencies.updateDefinition', async function () {
+		// Your command code here
+		vscode.window.showInformationMessage("Input the new definition name.");
+		const newDefinitionNameInput = vscode.window.showInputBox();
+		if (!newDefinitionNameInput)
+			return;
+		const input_term = await newDefinitionNameInput;
+		if (!input_term)
+			return;
+		diagnosticsProvider.updateReferences(input_term, dependencyDictionary);
+	  });
+	context.subscriptions.push(updateCommand);
+	const termDiagnostic = vscode.languages.createDiagnosticCollection('test');
+	context.subscriptions.push(termDiagnostic);
 	vscode.commands.registerCommand('nodeDependencies.copyEntry', (node: Dependency) => {
-		vscode.env.clipboard.writeText(node.full_name);
-		vscode.window.showInformationMessage(`Copied ${node.full_name} to clipboard.`);
+		vscode.env.clipboard.writeText(node.fullName);
+		vscode.window.showInformationMessage(`Copied ${node.fullName} to clipboard.`);
 	});
-	vscode.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.provideNodeSearch());
 
+	vscode.commands.registerCommand('nodeDependencies.openDefinition', (node: Dependency) => {
+		nodeDependenciesProvider.openDefinition(node);
+	});
+
+	getDefinitions().then((res) => {
+		setNewDefinitions(res);
+		diagnosticsProvider.refreshDiagnostics(res, termDiagnostic);
+	});
+	vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+		console.log("Saved document!", document);
+		getDefinitions().then((res) => {
+			setNewDefinitions(res);
+			diagnosticsProvider.refreshDiagnostics(res, termDiagnostic);
+		});
+	});
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider('prs', new AutoFix(), {
 			providedCodeActionKinds: AutoFix.providedCodeActionKinds
 		})
 	);
-	
+	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
+		'prs',
+		{
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				const val = suggestionsProvider.getCodeCompletions(document, position);
+				const suggestionsArray = [];
+				for (const suggestion of val){
+					suggestionsArray.push(new vscode.CompletionItem(suggestion, vscode.CompletionItemKind.Method));
+				}
+				return suggestionsArray;
+			}
+		},
+		'.' // triggered whenever a '.' is being typed
+	));
+	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
+		'prs',
+		{
+			provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
+				return [new vscode.CompletionItem("FILE_ELEMENT", vscode.CompletionItemKind.Method)];
+			}
+		},
+		'?' // triggered whenever a '?' is being typed
+	));
+	context.subscriptions.push(vscode.languages.registerDefinitionProvider( // Go to definition feature
+		'prs',
+		{
+			provideDefinition(document, position, token) {
+				return locationProvider.getLocation(document, position, token);
+			},
+		}
+	));
+	context.subscriptions.push(vscode.languages.registerReferenceProvider(
+		"prs",
+		{
+			provideReferences(document, position, context, token){
+				return diagnosticsProvider.getReferences(document, position, dependencyDictionary);
+			}
+		}
+	));
+
 
 	// const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
 	// subscribeToDocumentChanges(context, emojiDiagnostics);
@@ -82,9 +155,17 @@ export function activate(context: ExtensionContext) {
 	client.start();
 }
 
+function setNewDefinitions(parsed){
+	dependencyDictionary = parsed;
+	suggestionsProvider.refreshDictionary(parsed);
+	nodeDependenciesProvider.refreshDictionary(parsed);
+	locationProvider.refreshDictionary(parsed);
+}
+
 export function deactivate(): Thenable<void> | undefined {
 	if (!client) {
 		return undefined;
 	}
 	return client.stop();
 }
+

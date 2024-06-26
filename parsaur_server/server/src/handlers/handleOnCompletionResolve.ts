@@ -1,8 +1,8 @@
 import {CompletionItem} from 'vscode-languageserver/node';
  /**
    * Provides details and documentation of the reserved words for Parsaur language.
-   * 
-   * @returns Funtion that completes the {@link CompletionItem} with the relevant details and documentation. 
+   * THESE ARE TO BE WRITTEN!
+   * @returns Completed {@link CompletionItem} with the relevant details and documentation. 
    */
 export function getCompletionResolveHandler(){
 	return (item: CompletionItem): CompletionItem => {
@@ -125,6 +125,21 @@ export function getCompletionResolveHandler(){
 			item.documentation = 'docs';
 		}else if (item.data === 40) {
 			item.detail = 'PROPERTY details';
+			item.documentation = 'docs';
+		}else if (item.data === 41) {
+			item.detail = 'LINK_GROUP details';
+			item.documentation = 'docs';
+		}else if (item.data === 42) {
+			item.detail = 'PARSE details';
+			item.documentation = 'docs';
+		}else if (item.data === 43) {
+			item.detail = 'SKIP details';
+			item.documentation = 'docs';
+		}else if (item.data === 44) {
+			item.detail = 'BIND details';
+			item.documentation = 'docs';
+		}else if (item.data === 45) {
+			item.detail = 'PARENT details';
 			item.documentation = 'docs';
 		}
 		return item;

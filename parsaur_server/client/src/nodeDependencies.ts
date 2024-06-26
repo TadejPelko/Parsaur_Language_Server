@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import { environment } from './environments/environment';
-
+import { DefinitionEntry } from './definitionsParsing';
 
 /**
  * Contains funtions for hierarchical definitions search. 
@@ -9,8 +8,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Dependency | undefined | void> = new vscode.EventEmitter<Dependency | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Dependency | undefined | void> = this._onDidChangeTreeData.event;
-	private edgelist = environment['hierarchy_json'];
-	private dependencyDictionary = {};
+	private dependencyDictionary: {[key: string]: DefinitionEntry} = {};
 
 
   /**
@@ -21,35 +19,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    *
    * @returns DepNodeProvider class instance
    */
-	constructor() {
-		this.constructDependencyDictionary();
+	constructor(parsedDefinitions : {[key: string]: DefinitionEntry}) {
+		this.dependencyDictionary = parsedDefinitions;
 	}
 
-
- /**
-   * Constructs a dictionary mapping definitions to their full dependency path.
-   * 
-   * @returns Dictionary mapping definitions to their full dependency path
-   */
-	private constructDependencyDictionary(){
-		const arr = this.edgelist.split('\t');
-		for(const line of arr) {
-			const splittedLine = line.split(' ');
-			const term1 = splittedLine[0];
-			if (!term1)
-				continue;
-			const term1_split = term1.split('.');
-			const term2 = splittedLine[1];
-			if (!term2)
-				continue;
-			const term2_split = term2.split('.');
-
-			if (!(term1 in this.dependencyDictionary))
-				this.dependencyDictionary[term1_split[term1_split.length - 1]] = term1;
-				
-			if (!(term2 in this.dependencyDictionary))
-				this.dependencyDictionary[term2_split[term2_split.length - 1]] = term2;
-		}
+	public refreshDictionary(dictionary : {[key: string]: DefinitionEntry}){
+		this.dependencyDictionary = dictionary;
 	}
 
 	public refresh(): void {
@@ -61,28 +36,7 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 	}
 
  /**
-   * Checks whether the definition has a child in the hierarchy
-   * 
-   * @param item - Definition name
-   * 
-   * @returns Boolean answer
-   */
-	private checkForChildren(item: string): boolean {
-		const arr = this.edgelist.split('\t');
-		for(const line of arr) {
-			const splittedLine = line.split(' ');
-			if (splittedLine[0] === item){
-				return true;
-			}
-		}
-		return false;
-	}
-
- /**
    * Finds children of a definition
-   * 
-   * @remarks
-   * The functions reads {@link edgelist}
    * 
    * @param item - Definition name
    * 
@@ -90,22 +44,21 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    */
 	private readItemFromEdgelistPromise(item: string): Thenable<Dependency[]>{
 		const returnResult: Dependency[] = [];
-		const arr = this.edgelist.split('\t');
-		for(const line of arr) {
-			const splittedLine = line.split(' ');
-			if (splittedLine[0] === item){
-				const splittedName = splittedLine[1].split('.');
-				if (this.checkForChildren(splittedLine[1]))
-					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.Collapsed, []));
-				else
-					returnResult.push(new Dependency(splittedName[splittedName.length-1], splittedLine[1], "", vscode.TreeItemCollapsibleState.None, []));
+		for (const entry in this.dependencyDictionary){
+			if (this.dependencyDictionary[entry].fullName == item){
+				for(const child of this.dependencyDictionary[entry].childrenEntries){
+					if (child.children.length > 0)
+						returnResult.push(new Dependency(child.name, child.fullName, vscode.TreeItemCollapsibleState.Collapsed, []));
+					else
+						returnResult.push(new Dependency(child.name, child.fullName, vscode.TreeItemCollapsibleState.None, []));
+				}
 			}
 		}
 		return Promise.resolve(returnResult);
 	}
 
  /**
-   * Finds children of a definition
+   * Finds children of a definition. These are hard coded (potentially upgradeable).
    * 
    * @remarks
    * If the parameter is not given then it returns the two "top level" definitions.
@@ -116,11 +69,12 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
    */
 	public getChildren(element?: Dependency): Thenable<Dependency[]> {
 		if (element){
-			return this.readItemFromEdgelistPromise(element.full_name);
+			return this.readItemFromEdgelistPromise(element.fullName);
 		}else{
 			return Promise.resolve([
-						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", "", vscode.TreeItemCollapsibleState.Collapsed, []),
-						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", "", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("FILE_ELEMENT", "FILE_ELEMENT", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("FILE_OBJECT", "FILE_OBJECT", vscode.TreeItemCollapsibleState.Collapsed, []),
+						new Dependency("GENERIC_LISTS", "GENERIC_LISTS", vscode.TreeItemCollapsibleState.Collapsed, []),
 					]);
 		}
 	}
@@ -134,15 +88,57 @@ export class DepNodeProvider implements vscode.TreeDataProvider<Dependency> {
 			return;
 
 		const input_term = await searchInput;
-		const inputTermUpperCase = input_term.toUpperCase();
-		if (inputTermUpperCase in this.dependencyDictionary){
-			vscode.env.clipboard.writeText(this.dependencyDictionary[inputTermUpperCase]);
-			vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[inputTermUpperCase]} to clipboard.`);
-		}else{
-			vscode.window.showInformationMessage(`Could not find ${input_term}.`);
+		if (!input_term)
+			return;
+
+		const inputTermUpperCase = input_term.toUpperCase(); // User input we need to search for
+
+		// Round 1 of search -> we search for a definition that matches completely
+		for (const entry in this.dependencyDictionary){
+			if (inputTermUpperCase == this.dependencyDictionary[entry].name){
+				vscode.env.clipboard.writeText(this.dependencyDictionary[entry].fullName);
+				vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[entry].fullName} to clipboard.`);
+				return;
+			}
+		}
+		// Round 2 of search -> now we search for a definition that partially matches
+		for (const entry in this.dependencyDictionary){
+			if (this.dependencyDictionary[entry].fullName.indexOf(inputTermUpperCase) > -1){
+				vscode.env.clipboard.writeText(this.dependencyDictionary[entry].fullName);
+				vscode.window.showInformationMessage(`Copied ${this.dependencyDictionary[entry].fullName} to clipboard.`);
+				return;
+			}
+		}
+		vscode.window.showInformationMessage(`Could not find ${input_term}.`);
+	}
+
+	/**
+   * Opens the file containing the definition at its location. 
+   * 
+   * @param dependencyDictionary - Definitions dictionary
+   * @param searchDependency - Dependency class of the searched defi
+   */
+	public openDefinition(searchDependency: Dependency){
+		for(const entry in this.dependencyDictionary){
+			if(this.dependencyDictionary[entry].fullName == searchDependency.fullName){
+				vscode.workspace.openTextDocument(this.dependencyDictionary[entry].fileName).then(doc => 
+					{
+						vscode.window.showTextDocument(doc).then(editor => 
+						{
+							const pos = new vscode.Position(this.dependencyDictionary[entry].line, this.dependencyDictionary[entry].character);
+							// Line added - by having a selection at the same position twice, the cursor jumps there
+							editor.selections = [new vscode.Selection(pos,pos)]; 
+					
+							// And the visible range jumps there too
+							const range = new vscode.Range(pos, pos);
+							editor.revealRange(range);
+						});
+					});
+			}
 		}
 	}
 }
+
 
  /**
    * Provides a class that holds a dependency.
@@ -154,14 +150,13 @@ export class Dependency extends vscode.TreeItem {
 
 	constructor(
 		public readonly label: string,
-		public readonly full_name: string,
-		private readonly type: string,
+		public readonly fullName: string,
 		public collapsibleState: vscode.TreeItemCollapsibleState,
 		public children: Dependency[]
 	) {
 		super(label, collapsibleState);
 
-		this.tooltip = `${this.full_name}`;
+		this.tooltip = `${this.fullName}`;
 	}
 
 	contextValue = 'dependency';

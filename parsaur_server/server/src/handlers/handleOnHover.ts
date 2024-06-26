@@ -9,7 +9,7 @@ import { Hover, HoverParams, TextDocument, TextDocuments } from 'vscode-language
    * @returns The word of the character 
    */
 
-function getWordAt(str: string, pos: number) {
+function getWordAt(str: string, pos: number): string {
     // Perform type conversions.
     str = String(str);
     pos = Number(pos) >>> 0;
@@ -44,7 +44,7 @@ export function getHoverHandler(documents: TextDocuments<TextDocument>){
 		const hoverLine = lines[line];
 		const word = getWordAt(hoverLine, character);
 		return Promise.resolve({
-      contents: [word],
+            contents: [word],
 		});
 	};
 }
